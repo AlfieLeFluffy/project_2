@@ -58,17 +58,14 @@ void set_destroy(set_t *s)
   }
 }*/
 
-int set_lenght(set_t *s){
-
-}
-
 void set_print(set_t *s)
 {
-	fprintf(stdout,"Set on line %d contains %d elements which are:", s->line, sizeof(s->elem_arr));
-	for(int i = 0; i>s->length; i++){
+	fprintf(stdout,"Set on line %d contains %d elements which are: ", s->line, s->length);
+	for(int i = 0; i<s->length; i++){
 		for(int j = 0; j<sizeof(s->elem_arr[i]);j++){
-			fprintf(stdout," ,%c", s->elem_arr[i][j]);
+			fprintf(stdout,"%c", s->elem_arr[i][j]);
 		}
+		fprintf(stdout," ");
 	}
 	fprintf(stdout,"\n");
 }
@@ -77,7 +74,13 @@ int main()
 {
   set_t set;
   set_create(&set);
+  
+	set.length=3;
+	set.elem_arr[0] = "sdds";
+	set.elem_arr[1] = "lfyi";
+	set.elem_arr[2] = "5564";
 
+  set_print(&set);
 
   set_destroy(&set);
 
