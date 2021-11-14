@@ -38,14 +38,39 @@ int set_create(set_t *s)
     if (s->elem_arr == NULL)
       return 1;
   }
-
   return 0;
 }
 
+void set_destroy(set_t *s)
+{
+  for (int i = 0; i < s->length; i++) {
+    free(s->elem_arr[i]);
+  }
+  free(s->elem_arr);
+}
+
+/*void set_init(set_t *s)
+{
+  for (int i = 0; i < s->length; i++) {
+    for (int j = 0; j < 30; j++) {
+
+    }
+  }
+}*/
+
+void set_print(set_t *s)
+{
+
+}
 
 int main()
 {
-  char *element = malloc(30 * sizeof(char));
+  set_t set;
+  set_create(&set);
+
+
+
+  set_destroy(&set);
 
 
   return EXIT_SUCCESS;
