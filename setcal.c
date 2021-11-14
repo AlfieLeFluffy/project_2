@@ -60,14 +60,19 @@ void set_destroy(set_t *s)
 
 void set_print(set_t *s)
 {
-
+	fprintf(stdout,"Set on line %d contains %d elements which are:", s->length, sizeof(s->elem_arr));
+	for(int i = 0; i>s->length; i++){
+		for(int j = 0; j<sizeof(s->elem_arr[i]);j++){
+			fprintf(stdout," ,%c", s->elem_arr[i][j]);
+		}
+	}
+	fprintf(stdout,"\n");
 }
 
 int main()
 {
   set_t set;
   set_create(&set);
-
 
 
   set_destroy(&set);
