@@ -62,7 +62,7 @@ void set_print(set_t *s)
 {
 	fprintf(stdout,"Set on line %d contains %d elements which are: ", s->line, s->length);
 	for(int i = 0; i<s->length; i++){
-		for(int j = 0; j<sizeof(s->elem_arr[i]);j++){
+		for(int j = 0; s->elem_arr[i][j] != '\0';j++){
 			fprintf(stdout,"%c", s->elem_arr[i][j]);
 		}
 		fprintf(stdout," ");
