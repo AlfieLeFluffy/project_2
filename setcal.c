@@ -153,7 +153,7 @@ void set_destroy(set_t *s)
 
 /* funkce pro kontrolu vloženého parametru*/
 
-void check_param(int args, char *argv[])
+int check_param(int args, char *argv[])
 {
     if((args>1 || args<3) && fopen(argv[1],"r")!= NULL){
         return 1;
