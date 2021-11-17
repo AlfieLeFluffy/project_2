@@ -196,91 +196,170 @@ void set_print(set_t *s, uni_t *uni)
 }
 
 
-//tiskne true nebo false podle toho, jestli je množina definovaná na řádku A prázdná nebo neprázdná
-void set_empty(set_t* s, int line)
+//find set on line [line]
+int set_line(set_t* s, int line)
 {
-    for (int l = 0; l < 3; l++)         //l < 3 ???, velikost [sets]... zbytek funguje
+    for (int i = 0; i < 3; i++)         //l < 3 ???, velikost [sets]... zbytek funguje
     {
         //find set on line [line]
-        if (s[l].line == line)
+        if (s[i].line == line)
         {
-            if (s[l].length == 0)
-            {
-                fprintf(stdout, "Set on line %d is empty: true\n", line);
-                return;
-            }
-
-            fprintf(stdout, "Set on line %d is empty: false\n", line);
-            return;
+            return i;
         }
     }
 
     fprintf(stderr, "No set defined on line %d.\n", line);
+    return -1;
+}
+
+//prints chosen universe elements
+void set_boolprint(bool* b, uni_t* u)
+{
+    fprintf(stdout, "S ");
+
+    for (int i = 0; i < u->length; i++)
+    {
+        if (b[i])
+        {
+            fprintf(stdout, "%s ", u->elem_arr[i]);
+        }
+    }
+
+    fprintf(stdout, "\n");
+
+    return;
+}
+
+//tiskne true nebo false podle toho, jestli je množina definovaná na řádku A prázdná nebo neprázdná
+void set_empty(set_t* s, int line)
+{
+    int l = set_line(s, line);  //index of set on line [line]
+
+    if (l == -1)
+    {
+        return;
+    }
+
+    
+    if (s[l].length == 0)
+    {
+        fprintf(stdout, "Set on line %d is empty: true\n", line);
+        return;
+    }
+
+    fprintf(stdout, "Set on line %d is empty: false\n", line);
     return;
 }
 
 //tiskne počet prvků v množině A (definované na řádku A)
 void set_card(set_t* s, int line)
 {
-    for (int l = 0; l < 3; l++)         //l < 3 ???, velikost [sets]... zbytek funguje
+    int l = set_line(s, line);  //index of set on line [line]
+
+    if (l == -1)
     {
-        //find set on line [line]
-        if (s[l].line == line)
-        {
-            fprintf(stdout, "Set on line %d contains %d elements.\n", line, s[l].length);
-            return;
-        }
+        return;
     }
 
-    fprintf(stderr, "No set defined on line %d.\n", line);
+    
+    fprintf(stdout, "Set on line %d contains %d elements.\n", line, s[l].length);
     return;
 }
 
 //tiskne doplněk množiny A
 void set_complement(set_t* s, uni_t* u, int line)
 {
-    bool temp[u->length];
+    int l = set_line(s, line);  //index of set on line [line]
+
+    if (l == -1)
+    {
+        return;
+    }
+
+
+    bool set_comp[u->length];   //complement of set on line [line]
     for (int i = 0; i < u->length; i++)
     {
-        temp[i] = true;
+        set_comp[i] = true;
     }
-    
-    for (int l = 0; l < 3; l++)         //l < 3 ???, velikost [sets]... zbytek funguje
+
+    for (int i = 0; i < s[l].length; i++)
     {
-        //find set on line [line]
-        if (s[l].line == line)
-        {
-            for (int i = 0; i < s[l].length; i++)
-            {
-                temp[s[l].elem_arr[i]] = false;
-            }
-
-
-            fprintf(stdout, "S ");
-
-            for (int i = 0; i < u->length; i++)
-            {
-                if (temp[i])
-                {
-                    fprintf(stdout, "%s ", u->elem_arr[i]);
-                }
-            }
-
-            fprintf(stdout, "\n");
-
-            return;
-        }
+        set_comp[s[l].elem_arr[i]] = false;
     }
 
-    fprintf(stderr, "No set defined on line %d.\n", line);
+    set_boolprint(set_comp, u);
     return;
 }
 
 //tiskne sjednocení množin A a B
-void set_union();
+void set_union(set_t* s, uni_t* u, int line_a, int line_b)
+{
+    int l_a = set_line(s, line_a);  //index of set on line [line_a]
+    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+
+    if (l_a == -1 || l_b == -1)
+    {
+        return;
+    }
+
+
+    bool set_uni[u->length];   //union of sets on lines [line_a] and [line_b]
+    for (int i = 0; i < u->length; i++)
+    {
+        set_uni[i] = false;
+    }
+
+    int l = l_a;
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < s[l].length; j++)
+        {
+            set_uni[s[l].elem_arr[j]] = true;
+        }
+
+        l = l_b;
+    }
+
+
+    set_boolprint(set_uni, u);
+    return;
+}
 
 //tiskne průnik množin A a B
-void set_intersect();
+void set_intersect(set_t* s, uni_t* u, int line_a, int line_b)
+{
+    int l_a = set_line(s, line_a);  //index of set on line [line_a]
+    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+
+    if (l_a == -1 || l_b == -1)
+    {
+        return;
+    }
+
+
+    bool set_int[u->length];   //intersect of sets on lines [line_a] and [line_b]
+    for (int i = 0; i < u->length; i++)
+    {
+        set_int[i] = false;
+    }
+
+    for (int i = 0; i < s[l_a].length; i++)
+    {
+        for (int j = 0; j < s[l_b].length; j++)
+        {
+            if (s[l_a].elem_arr[i] == s[l_b].elem_arr[j])
+            {
+                set_int[s[l_a].elem_arr[i]] = true;
+                break;
+            }
+        }
+    }
+
+
+    set_boolprint(set_int, u);
+    return;
+}
 
 //tiskne rozdíl množin A \ B
 void set_minus();
@@ -331,20 +410,25 @@ int main(int argc, char **argv)
         return EXIT_FAILURE
     }*/
 
-    
-    set_complement(sets, &uni, 1);
+    set_intersect(sets, &uni, 1, 3);
+    set_intersect(sets, &uni, 3, 2);
+    set_intersect(sets, &uni, 3, 4);
+
+    /*set_union(sets, &uni, 1, 3);
+    set_union(sets, &uni, 3, 2);
+    set_union(sets, &uni, 3, 4);*/
+
+    /*set_complement(sets, &uni, 1);
     set_complement(sets, &uni, 3);
-    set_complement(sets, &uni, 4);
+    set_complement(sets, &uni, 4);*/
 
-    /*
-    set_empty(sets, 2);
+    /*set_empty(sets, 2);
     set_empty(sets, 1);
-    set_empty(sets, 4);
+    set_empty(sets, 4);*/
 
-    set_card(sets, 2);
+    /*set_card(sets, 2);
     set_card(sets, 1);
-    set_card(sets, 4);
-    */
+    set_card(sets, 4);*/
 
     set_destroy(&set);
     uni_destroy(&uni);
