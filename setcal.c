@@ -63,7 +63,7 @@ void set_destroy(set_t *s)
 
 /* funkce pro kontrolu vloženého parametru*/
 
-void check_param(int args, int *argv)
+void check_param(int args, char *argv)
 {
     if((args>1 || args<3) && fopen(argv[1],"r")!= NULL){
         return 1;
@@ -86,7 +86,7 @@ void set_print(set_t *s)
 	fprintf(stdout, "\n");
 }
 
-int main(int args, int argv)
+int main(int args, char argv)
 {
     set_t set;
     if(set_create(&set) == 1)
