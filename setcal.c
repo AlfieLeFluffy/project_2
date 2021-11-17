@@ -267,11 +267,11 @@ void set_empty(set_t* s, int line)
     
     if (s[l].length == 0)
     {
-        fprintf(stdout, "Set on line %d is empty: true\n", line);
+        fprintf(stdout, "true\n", line);
         return;
     }
 
-    fprintf(stdout, "Set on line %d is empty: false\n", line);
+    fprintf(stdout, "false\n", line);
     return;
 }
 
@@ -435,11 +435,11 @@ void set_subseteq(set_t* s, uni_t* u, int line_a, int line_b)
 
     if (set_sub(s, u, l_a, l_b))
     {
-        fprintf(stdout, "Set on line %d is a subset of set on line %d: true\n", line_a, line_b);
+        fprintf(stdout, "true\n", line_a, line_b);
         return;
     }
 
-    fprintf(stdout, "Set on line %d is a subset of set on line %d: false\n", line_a, line_b);
+    fprintf(stdout, "false\n", line_a, line_b);
     return;
 }
 
@@ -457,11 +457,11 @@ void set_subset(set_t* s, uni_t* u, int line_a, int line_b)
 
     if (set_sub(s, u, l_a, l_b) && !set_sub(s, u, l_b, l_a))
     {
-        fprintf(stdout, "Set on line %d is a subset of set on line %d: true\n", line_a, line_b);
+        fprintf(stdout, "true\n", line_a, line_b);
         return;
     }
 
-    fprintf(stdout, "Set on line %d is a subset of set on line %d: false\n", line_a, line_b);
+    fprintf(stdout, "false\n", line_a, line_b);
     return;
 }
 
@@ -479,11 +479,11 @@ void set_equals(set_t* s, uni_t* u, int line_a, int line_b)
 
     if (set_sub(s, u, l_a, l_b) && set_sub(s, u, l_b, l_a))
     {
-        fprintf(stdout, "Set on line %d is equal to set on line %d: true\n", line_a, line_b);
+        fprintf(stdout, "true\n", line_a, line_b);
         return;
     }
 
-    fprintf(stdout, "Set on line %d is equal to set on line %d: false\n", line_a, line_b);
+    fprintf(stdout, "false\n", line_a, line_b);
     return;
 }
 
