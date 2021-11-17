@@ -17,7 +17,8 @@
 #include <string.h>
 
 /** definice konstant **/
-#define ELEM_LEN 30         //maximalni povolena delka retezce
+#define ELEM_LEN 31         //maximalni povolena delka retezce + 1
+#define LINES_MAX 1000
 
 /** definice novych datovych typu **/
 typedef struct{
@@ -82,7 +83,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
         p = realloc(u->elem_arr, sizeof(char *)*(u->cap + 1));
         if(p == NULL) {
             fprintf(stderr, "Memory error\n");
-            return 1;
+            return 0;
         }
         u->elem_arr = p;
         u->cap++;
@@ -92,7 +93,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
     u->elem_arr[u->length] = malloc(str_len * sizeof(char));                          /**!!! str_len +1 !!!  podle nacitani ze souboru...**/
     if( u->elem_arr[u->length] == NULL) {
         fprintf(stderr, "Memory error\n");
-        return 1;
+        return 0;
     }
 
     //ulozim novy prvek
@@ -100,7 +101,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
 
     u->length++;
 
-    return 0;
+    return 1;
 }
 
 /* funkce pro rozsireni mnoziny  o novy prvek*/
@@ -112,7 +113,7 @@ int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ?
         p = realloc(s->elem_arr, sizeof(int)*(s->cap + 1));
         if(p == NULL) {
             fprintf(stderr, "Memory error\n");
-            return 1;
+            return 0;
         }
         s->elem_arr = p;
         s->cap++;
@@ -122,7 +123,7 @@ int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ?
     s->elem_arr[s->length] = elem;
     s->length++;
 
-    return 0;
+    return 1;
 }
 
 /* funkce pro uvolneni pameti alokovane pro univerzum */
@@ -151,6 +152,142 @@ void set_destroy(set_t *s)
     s->cap = 0;
 }
 
+
+/* funkce pro kontrolu vlozeneho parametru*/
+
+int check_param(int argc, char **argv)
+{
+    if (argc != 2){
+        fprintf(stderr, "Invalid number of args\n");
+        return 0;
+    }
+    if (fopen(argv[1],"r") == NULL){
+        fprintf(stderr, "Unable to open file\n");
+        return 0;
+    }
+    return 1;
+}
+
+/* funkce pro nacteni souboru a zpracovani dat*/
+FILE *file_open(char **argv)                            /** zavrit soubor fp**/
+{
+    FILE *fp = fopen(argv[1], "r");
+    return fp;
+}
+
+/* funkce pro nacteni prvku do univerza */
+int load_uni(FILE * fp, uni_t *u)
+{
+    //vytvorim univerzum
+    uni_create(u);
+
+    char c;
+    char temp_s[ELEM_LEN];
+
+    temp_s[0] = '\0';
+
+    for(int i = 0;(c = fgetc(fp)) != '\n' && c != EOF;) {       /**posledni prvek neni ulozeny kvuli podmince lomeno n nebo EOF **/
+        //zkontroluji max. povolenou delku prvku
+        if (i == ELEM_LEN - 1) {
+            fprintf(stderr, "Element length exceeds %d", ELEM_LEN - 1);
+            return 0;
+        }
+                                                                                        /** PISMENO ABECEDY??? **/
+        //pokud najdu mezeru a zaroven retezec neni prazdny, ukonci retezec,
+        //zapis ho a vynuluj pocitadlo
+        if (c == ' ' && temp_s[0] != '\0') {
+            temp_s[i+1] = '\0';
+
+            printf("%s\n",temp_s);
+
+            if (uni_append(u,temp_s, i+2) == 0) {                 //index je od nuly + '\0' => +2
+                return 0;                                                                   /** EXIT ??? **/
+            }
+
+            i = 0;
+            temp_s[0] = '\0';
+            continue;
+        }
+
+        if (c != ' ') {
+            printf("%d %c\n", i, c);
+            temp_s[i] = c;
+            i++;                                /**inkrementace tu **/
+
+        }
+    }
+
+    if (c == EOF) {
+        return -1;
+    }
+
+    return 1;
+}
+
+int load_set(FILE *fp, uni_t *u)
+{
+    return 1;
+}
+
+int load_rel(FILE *fp, uni_t *u)
+{
+    return 1;
+}
+
+int load_com(FILE *fp, uni_t *u)
+{
+    return 1;
+}
+
+int text_load(FILE *fp, uni_t *u)
+{
+    //cti soubor po radcich
+    for (int lines = 1; lines <= LINES_MAX; lines++) {
+        //zjistim, o jaky typ radku se jedna
+        switch(fgetc(fp)) {
+            case 'U':
+                if (lines != 1) {
+                    fprintf(stderr, "Universe on an unexpected line (line %d)\n", lines);
+                    return 0;
+                }
+                load_uni(fp, u);            /** if == 0 !!!**/
+                continue;
+
+            case 'S':
+                if (lines == 1) {
+                    fprintf(stderr, "Universe expected on line 1 instead of set\n");
+                    return 0;
+                }
+                load_set(fp, u);
+                continue;
+
+            case 'R':
+                if (lines == 1) {
+                    fprintf(stderr, "Universe expected on line 1 instead of relation\n");
+                    return 0;
+                }
+                load_rel(fp, u);
+                continue;
+
+            case 'C':
+                if (lines == 1) {
+                    fprintf(stderr, "Universe expected on line 1 instead of command\n");
+                    return 0;
+                }
+                load_com(fp, u);
+                continue;
+
+            default:
+                fprintf(stderr, "Unidentified line number %d\n", lines);
+                return 0;
+        }
+    }
+
+    /*if (lines > LINES_MAX){ ??? } */
+
+    return 1;
+}
+
 /* funkce pro vraceni mnoziny */
 void set_print(set_t *s, uni_t *uni)
 {
@@ -170,15 +307,18 @@ void set_print(set_t *s, uni_t *uni)
 	fprintf(stdout, "\n");*/
 }
 
-int main()
+int main(int argc, char **argv)
 {
     uni_t uni;
     set_t set;
 
-    uni_create(&uni);
+    /*uni_create(&uni);
 
     uni_append(&uni, "Ahoj", 5);
-    uni_append(&uni, "1234", 5);
+    uni_append(&uni, "1234", 5);*/
+
+
+    text_load(file_open(argv), &uni);
 
     set_create(&set, 1);
 
