@@ -183,49 +183,52 @@ int load_uni(FILE * fp, uni_t *u)
 
     char c;
     char temp_s[ELEM_LEN];
-
     temp_s[0] = '\0';
+    int i = 0;
 
-    for(int i = 0;(c = fgetc(fp)) != '\n' && c != EOF;) {       /**posledni prvek neni ulozeny kvuli podmince lomeno n nebo EOF **/
+    while (1) {       /**dodelat podminku??? upravit, zkratit (rozdelit na podfunkce)**/
         //zkontroluji max. povolenou delku prvku
-        if (i == ELEM_LEN - 1) {
-            fprintf(stderr, "Element length exceeds %d", ELEM_LEN - 1);
+        if (i == ELEM_LEN) {
+            fprintf(stderr, "Element length exceeds %d\n", ELEM_LEN - 1);
             return 0;
         }
-                                                                                        /** PISMENO ABECEDY??? **/
+
+        c = fgetc(fp);                                                                        /** PISMENO ABECEDY??? **/
+
         //pokud najdu mezeru a zaroven retezec neni prazdny, ukonci retezec,
         //zapis ho a vynuluj pocitadlo
-        if (c == ' ' && temp_s[0] != '\0') {
-            temp_s[i+1] = '\0';
+        if ((c == ' ' || c == EOF || c == '\n') && temp_s[0] != '\0') {
+            temp_s[i] = '\0';
 
-            printf("%s\n",temp_s);
+            //printf("%s\n",temp_s);
 
             if (uni_append(u,temp_s, i+2) == 0) {                 //index je od nuly + '\0' => +2
                 return 0;                                                                   /** EXIT ??? **/
             }
-
+            //
             i = 0;
             temp_s[0] = '\0';
+            if (c == EOF){
+            return -1;
+            }
+            if (c == '\n'){
+                return 1;
+            }
             continue;
         }
 
-        if (c != ' ') {
-            printf("%d %c\n", i, c);
+        else if (c != ' ') {
+            //printf("%d %c\n", i, c);
             temp_s[i] = c;
             i++;                                /**inkrementace tu **/
-
         }
     }
-
-    if (c == EOF) {
-        return -1;
-    }
-
     return 1;
 }
 
 int load_set(FILE *fp, uni_t *u)
 {
+    set_t set;
     return 1;
 }
 
@@ -250,7 +253,9 @@ int text_load(FILE *fp, uni_t *u)
                     fprintf(stderr, "Universe on an unexpected line (line %d)\n", lines);
                     return 0;
                 }
-                load_uni(fp, u);            /** if == 0 !!!**/
+                if (load_uni(fp, u) == -1){  /**pridat error if == 0 !!!**/
+                    return 1;
+                }
                 continue;
 
             case 'S':
