@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 /** definice konstant **/
 #define ELEM_LEN 30         //maximalni povolena delka retezce
@@ -198,13 +199,12 @@ void set_print(set_t *s, uni_t *uni)
 //tiskne true nebo false podle toho, jestli je množina definovaná na řádku A prázdná nebo neprázdná
 void set_empty(set_t* s, int line)
 {
-    for (int i = 0; i < 3; i++)         //i < 3 ???, velikost [sets]... zbytek funguje
+    for (int l = 0; l < 3; l++)         //l < 3 ???, velikost [sets]... zbytek funguje
     {
-        fprintf(stdout, "line %d\n", s[i].line);
-        if (s[i].line == line)
+        //find set on line [line]
+        if (s[l].line == line)
         {
-
-            if (s[i].length == 0)
+            if (s[l].length == 0)
             {
                 fprintf(stdout, "Set on line %d is empty: true\n", line);
                 return;
@@ -218,6 +218,81 @@ void set_empty(set_t* s, int line)
     fprintf(stderr, "No set defined on line %d.\n", line);
     return;
 }
+
+//tiskne počet prvků v množině A (definované na řádku A)
+void set_card(set_t* s, int line)
+{
+    for (int l = 0; l < 3; l++)         //l < 3 ???, velikost [sets]... zbytek funguje
+    {
+        //find set on line [line]
+        if (s[l].line == line)
+        {
+            fprintf(stdout, "Set on line %d contains %d elements.\n", line, s[l].length);
+            return;
+        }
+    }
+
+    fprintf(stderr, "No set defined on line %d.\n", line);
+    return;
+}
+
+//tiskne doplněk množiny A
+void set_complement(set_t* s, uni_t* u, int line)
+{
+    bool temp[u->length];
+    for (int i = 0; i < u->length; i++)
+    {
+        temp[i] = true;
+    }
+    
+    for (int l = 0; l < 3; l++)         //l < 3 ???, velikost [sets]... zbytek funguje
+    {
+        //find set on line [line]
+        if (s[l].line == line)
+        {
+            for (int i = 0; i < s[l].length; i++)
+            {
+                temp[s[l].elem_arr[i]] = false;
+            }
+
+
+            fprintf(stdout, "S ");
+
+            for (int i = 0; i < u->length; i++)
+            {
+                if (temp[i])
+                {
+                    fprintf(stdout, "%s ", u->elem_arr[i]);
+                }
+            }
+
+            fprintf(stdout, "\n");
+
+            return;
+        }
+    }
+
+    fprintf(stderr, "No set defined on line %d.\n", line);
+    return;
+}
+
+//tiskne sjednocení množin A a B
+void set_union();
+
+//tiskne průnik množin A a B
+void set_intersect();
+
+//tiskne rozdíl množin A \ B
+void set_minus();
+
+//tiskne true nebo false podle toho, jestli je množina A podmnožinou množiny B
+void set_subseteq();
+
+//tiskne true nebo false, jestli je množina A vlastní podmnožina množiny B
+void set_subset();
+
+//tiskne true nebo false, jestli jsou množiny rovny
+void equals();
 
 
 int main(int argc, char **argv)
@@ -256,10 +331,20 @@ int main(int argc, char **argv)
         return EXIT_FAILURE
     }*/
 
+    
+    set_complement(sets, &uni, 1);
+    set_complement(sets, &uni, 3);
+    set_complement(sets, &uni, 4);
 
+    /*
     set_empty(sets, 2);
     set_empty(sets, 1);
     set_empty(sets, 4);
+
+    set_card(sets, 2);
+    set_card(sets, 1);
+    set_card(sets, 4);
+    */
 
     set_destroy(&set);
     uni_destroy(&uni);
