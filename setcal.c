@@ -230,6 +230,30 @@ void set_boolprint(bool* b, uni_t* u)
     return;
 }
 
+bool set_sub(set_t* s, uni_t* u, int l_a, int l_b)
+{
+    bool set_b[u->length];   //elements of set on line [line_b]
+    for (int i = 0; i < u->length; i++)
+    {
+        set_b[i] = false;
+    }
+
+    for (int i = 0; i < s[l_b].length; i++)
+    {
+        set_b[s[l_b].elem_arr[i]] = true;
+    }
+
+    for (int i = 0; i < s[l_a].length; i++)
+    {
+        if (!set_b[s[l_a].elem_arr[i]])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 //tiskne true nebo false podle toho, jestli je množina definovaná na řádku A prázdná nebo neprázdná
 void set_empty(set_t* s, int line)
 {
@@ -362,16 +386,106 @@ void set_intersect(set_t* s, uni_t* u, int line_a, int line_b)
 }
 
 //tiskne rozdíl množin A \ B
-void set_minus();
+void set_minus(set_t* s, uni_t* u, int line_a, int line_b)
+{
+    int l_a = set_line(s, line_a);  //index of set on line [line_a]
+    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+
+    if (l_a == -1 || l_b == -1)
+    {
+        return;
+    }
+
+
+    bool set_min[u->length];   //set on line [line_a] minus set on line [line_b]
+    for (int i = 0; i < u->length; i++)
+    {
+        set_min[i] = false;
+    }
+
+    for (int i = 0; i < s[l_a].length; i++)
+    {
+        set_min[s[l_a].elem_arr[i]] = true;
+        
+        for (int j = 0; j < s[l_b].length; j++)
+        {
+            if (s[l_a].elem_arr[i] == s[l_b].elem_arr[j])
+            {
+                set_min[s[l_a].elem_arr[i]] = false;
+                break;
+            }
+        }
+    }
+
+    set_boolprint(set_min, u);
+    return;
+}
 
 //tiskne true nebo false podle toho, jestli je množina A podmnožinou množiny B
-void set_subseteq();
+void set_subseteq(set_t* s, uni_t* u, int line_a, int line_b)
+{
+    int l_a = set_line(s, line_a);  //index of set on line [line_a]
+    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+
+    if (l_a == -1 || l_b == -1)
+    {
+        return;
+    }
+
+
+    if (set_sub(s, u, l_a, l_b))
+    {
+        fprintf(stdout, "Set on line %d is a subset of set on line %d: true\n", line_a, line_b);
+        return;
+    }
+
+    fprintf(stdout, "Set on line %d is a subset of set on line %d: false\n", line_a, line_b);
+    return;
+}
 
 //tiskne true nebo false, jestli je množina A vlastní podmnožina množiny B
-void set_subset();
+void set_subset(set_t* s, uni_t* u, int line_a, int line_b)
+{
+    int l_a = set_line(s, line_a);  //index of set on line [line_a]
+    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+
+    if (l_a == -1 || l_b == -1)
+    {
+        return;
+    }
+
+
+    if (set_sub(s, u, l_a, l_b) && !set_sub(s, u, l_b, l_a))
+    {
+        fprintf(stdout, "Set on line %d is a subset of set on line %d: true\n", line_a, line_b);
+        return;
+    }
+
+    fprintf(stdout, "Set on line %d is a subset of set on line %d: false\n", line_a, line_b);
+    return;
+}
 
 //tiskne true nebo false, jestli jsou množiny rovny
-void equals();
+void set_equals(set_t* s, uni_t* u, int line_a, int line_b)
+{
+    int l_a = set_line(s, line_a);  //index of set on line [line_a]
+    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+
+    if (l_a == -1 || l_b == -1)
+    {
+        return;
+    }
+
+
+    if (set_sub(s, u, l_a, l_b) && set_sub(s, u, l_b, l_a))
+    {
+        fprintf(stdout, "Set on line %d is equal to set on line %d: true\n", line_a, line_b);
+        return;
+    }
+
+    fprintf(stdout, "Set on line %d is equal to set on line %d: false\n", line_a, line_b);
+    return;
+}
 
 
 int main(int argc, char **argv)
@@ -410,32 +524,19 @@ int main(int argc, char **argv)
         return EXIT_FAILURE
     }*/
 
-    set_intersect(sets, &uni, 1, 3);
-    set_intersect(sets, &uni, 3, 2);
-    set_intersect(sets, &uni, 3, 4);
 
-    /*set_union(sets, &uni, 1, 3);
-    set_union(sets, &uni, 3, 2);
-    set_union(sets, &uni, 3, 4);*/
-
-    /*set_complement(sets, &uni, 1);
+    set_empty(sets, 4);
+    set_card(sets, 2);
     set_complement(sets, &uni, 3);
-    set_complement(sets, &uni, 4);*/
-
-    /*set_empty(sets, 2);
-    set_empty(sets, 1);
-    set_empty(sets, 4);*/
-
-    /*set_card(sets, 2);
-    set_card(sets, 1);
-    set_card(sets, 4);*/
+    set_union(sets, &uni, 1, 3);
+    set_intersect(sets, &uni, 1, 3);
+    set_minus(sets, &uni, 1, 3);
+    set_subseteq(sets, &uni, 3, 4);
+    set_subset(sets, &uni, 3, 1);
+    set_equals(sets, &uni, 1, 3);
 
     set_destroy(&set);
     uni_destroy(&uni);
 
     return EXIT_SUCCESS;
 }
-
-// set_t { [ab], [cd] }
-
-// set_t { [ab, cd], [ef, gh] }
