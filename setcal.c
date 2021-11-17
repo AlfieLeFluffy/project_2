@@ -182,26 +182,72 @@ void set_print(set_t *s, uni_t *uni)
 	fprintf(stdout, "\n");*/
 }
 
+
+//tiskne true nebo false podle toho, jestli je množina definovaná na řádku A prázdná nebo neprázdná
+void set_empty(set_t* s, int line)
+{
+    for (int i = 0; i < 3; i++)         //i < 3 ???, velikost [sets]... zbytek funguje
+    {
+        fprintf(stdout, "line %d\n", s[i].line);
+        if (s[i].line == line)
+        {
+
+            if (s[i].length == 0)
+            {
+                fprintf(stdout, "Set on line %d is empty: true\n", line);
+                return;
+            }
+
+            fprintf(stdout, "Set on line %d is empty: false\n", line);
+            return;
+        }
+    }
+
+    fprintf(stderr, "No set defined on line %d.\n", line);
+    return;
+}
+
+
 int main(int args, char *argv[])
 {
     uni_t uni;
     set_t set;
+
+    set_t sets[3];
 
     uni_create(&uni);
 
     uni_append(&uni, "Ahoj", 5);
     uni_append(&uni, "1234", 5);
 
-    set_create(&set, 1);
-
+    set_create(&set, 1); //set on line 1, "Ahoj" "1234"
     set_append(&set, 0);
     set_append(&set, 1);
+    sets[0] = set;
+
+    set_print(&set, &uni);
+
+
+    set_create(&set, 3); //set on line 3, "1234" "1234"
+    set_append(&set, 1);
+    set_append(&set, 1);
+    sets[1] = set;
+
+    set_print(&set, &uni);
+
+    set_create(&set, 4); //set on line 4, empty*/
+    sets[2] = set;
+
+    set_print(&set, &uni);
 
     /*TODO if (append == 1) {
         return EXIT_FAILURE
     }*/
 
-    set_print(&set, &uni);
+
+    set_empty(sets, 2);
+    set_empty(sets, 1);
+    set_empty(sets, 4);
 
     set_destroy(&set);
     uni_destroy(&uni);
