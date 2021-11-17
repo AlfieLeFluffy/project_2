@@ -47,13 +47,14 @@ typedef struct{
 
 
 /** definice globalnich funkci **/
-/* funkce pro vytvoreni univerza */
+
+//vytiskne memory error
 void memory_err()
 {
     fprintf(stderr, "Memory error\n");
 }
 
-
+/* funkce pro vytvoreni univerza */
 void uni_create(uni_t *u)
 {
     u->length = 0;
@@ -88,7 +89,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
         p = realloc(u->elem_arr, sizeof(char *)*(u->cap + 1));
         if(p == NULL) {
             memory_err();
-            return 1;
+            return 0;
         }
         u->elem_arr = p;
         u->cap++;
@@ -98,7 +99,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
     u->elem_arr[u->length] = malloc(str_len * sizeof(char));                          /**!!! str_len +1 !!!  podle nacitani ze souboru...**/
     if( u->elem_arr[u->length] == NULL) {
         memory_err();
-        return 1;
+        return 0;
     }
 
     //ulozim novy prvek
@@ -106,7 +107,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
 
     u->length++;
 
-    return 0;
+    return 1;
 }
 
 /* funkce pro rozsireni mnoziny  o novy prvek*/
@@ -118,7 +119,7 @@ int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ?
         p = realloc(s->elem_arr, sizeof(int)*(s->cap + 1));
         if(p == NULL) {
             memory_err();
-            return 1;
+            return 0;
         }
         s->elem_arr = p;
         s->cap++;
@@ -128,7 +129,7 @@ int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ?
     s->elem_arr[s->length] = elem;
     s->length++;
 
-    return 0;
+    return 1;
 }
 
 /* funkce pro uvolneni pameti alokovane pro univerzum */
@@ -157,22 +158,22 @@ void set_destroy(set_t *s)
     s->cap = 0;
 }
 
-/* funkce pro kontrolu vloženého parametru*/
+/* funkce pro kontrolu vlozeneho parametru*/
 
-int check_param(int args, char *argv[])
+int check_param(int argc, char **argv)
 {
-    if (args > 1 || args < 3){
+    if (argc != 2){
         fprintf(stderr, "Invalid number of args\n");
-        return 1;
+        return 0;
     }
-    if (fopen(argv[1],"r")!= NULL){
+    if (fopen(argv[1],"r") == NULL){
         fprintf(stderr, "Unable to open file\n");
-        return 1;
+        return 0;
     }
-    return 0;
+    return 1;
 }
 
-/* funkce pro na čtení souboru a zpracování dat*/
+/* funkce pro nacteni souboru a zpracovani dat*/
 
 /* funkce pro vraceni mnoziny */
 void set_print(set_t *s, uni_t *uni)
@@ -193,7 +194,7 @@ void set_print(set_t *s, uni_t *uni)
 	fprintf(stdout, "\n");*/
 }
 
-int main(int args, char *argv[])
+int main(int argc, char **argv)
 {
     uni_t uni;
     set_t set;
