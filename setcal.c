@@ -61,6 +61,18 @@ void set_destroy(set_t *s)
     free(s->elem_arr);
 }
 
+/* funkce pro kontrolu vloženého parametru*/
+
+void check_param(int args, int *argv)
+{
+    if((args>1 || args<3) && fopen(argv[1],"r")!= NULL){
+        return 1;
+    }
+    return 0;
+}
+
+/* funkce pro na čtení souboru a zpracování dat*/
+
 /* funkce pro vraceni mnoziny */
 void set_print(set_t *s)
 {
@@ -74,7 +86,7 @@ void set_print(set_t *s)
 	fprintf(stdout, "\n");
 }
 
-int main()
+int main(int args, int argv)
 {
     set_t set;
     if(set_create(&set) == 1)
