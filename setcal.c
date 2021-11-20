@@ -5,7 +5,7 @@
  * ver 0.1
  * =========================
  *
- * 16.11.2021
+ * 20.11.2021
  *
  *******************************/
 
@@ -18,7 +18,8 @@
 #include <stdbool.h>
 
 /** definice konstant **/
-#define ELEM_LEN 30         //maximalni povolena delka retezce
+#define ELEM_LEN 31         //maximalni povolena delka retezce + 1
+#define LINES_MAX 1000      //max podporovany pocet radku v souboru
 
 /** definice novych datovych typu **/
 typedef struct{
@@ -35,7 +36,7 @@ typedef struct{
 } set_t;
 
 typedef struct{
-    int e_1;                                    //maly L vypada stejne jak 1 tak jsem to upravila
+    int e_1;
     int e_2;
 } elpair_t;
 
@@ -46,8 +47,14 @@ typedef struct{
 	elpair_t *elem_arr;
 } rel_t;
 
+typedef struct{
+    set_t **arr_s;      //pole ukazatelu na vsechny mnoziny
+    rel_t **arr_r;      //pole ukazatelu na vsechny relace
+    ///TODO capacity na oba
+} data_t;
 
 /** definice globalnich funkci **/
+//funkce pri uspechu vraci 1, pri neuspechu 0
 
 //vytiskne memory error
 void memory_err()
@@ -55,7 +62,7 @@ void memory_err()
     fprintf(stderr, "Memory error\n");
 }
 
-/* funkce pro vytvoreni univerza */
+/* funkce pro inicializaci univerza */
 void uni_create(uni_t *u)
 {
     u->length = 0;
@@ -63,7 +70,7 @@ void uni_create(uni_t *u)
     u->elem_arr = NULL;
 }
 
-/* funkce pro vytvoreni mnoziny */
+/* funkce pro inicializaci mnoziny */
 void set_create(set_t *s, int line)
 {
     s->line = line;
@@ -72,13 +79,20 @@ void set_create(set_t *s, int line)
     s->elem_arr = NULL;
 }
 
-/* funkce pro vytvoreni relace */
+/* funkce pro inicializaci relace */
 void rel_create(rel_t *r, int line)
 {
     r->line = line;
     r->length = 0;
     r->cap = 0;
     r->elem_arr = NULL;
+}
+
+/* funkce pro inicializaci poli mnozin a relaci */
+void data_create(data_t *d)
+{
+    d->arr_s = NULL;
+    d->arr_r = NULL;
 }
 
 /* funkce pro rozsireni univerza  o novy prvek*/
@@ -97,7 +111,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
     }
 
     //alokace mista pro dany prvek
-    u->elem_arr[u->length] = malloc(str_len * sizeof(char));                          /**!!! str_len +1 !!!  podle nacitani ze souboru...**/
+    u->elem_arr[u->length] = malloc((str_len+1) * sizeof(char));
     if( u->elem_arr[u->length] == NULL) {
         memory_err();
         return 0;
@@ -111,7 +125,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
     return 1;
 }
 
-/* funkce pro rozsireni mnoziny  o novy prvek*/
+/* funkce pro rozsireni mnoziny o novy prvek */
 int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ??? **/
 {
     //pokud je potreba, zvetsim mnozinu
@@ -159,6 +173,17 @@ void set_destroy(set_t *s)
     s->cap = 0;
 }
 
+/* funkce pro uvolneni pameti alokovane pro data */
+void data_destroy(data_t *d)
+{
+    if (d->arr_s != NULL) {
+        free(d->arr_s);
+    }
+    if (d->arr_r != NULL) {
+        free(d->arr_r);
+    }
+}
+
 /* funkce pro kontrolu vlozeneho parametru*/
 
 int check_param(int argc, char **argv)
@@ -174,7 +199,171 @@ int check_param(int argc, char **argv)
     return 1;
 }
 
-/* funkce pro nacteni souboru a zpracovani dat*/
+/* funkce pro otevreni souboru */
+FILE *file_open(char **argv)                            /** zavrit soubor fp**/
+{
+    FILE *fp = fopen(argv[1], "r");
+    return fp;
+}
+
+/* funkce pro kontrolu, zda je znak podporovan */
+int check_char(char c)
+{
+    if ( (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ){
+        return 1;
+    }
+    return 0;
+}
+
+/* prodlouzi dany string o 1 znak */
+void str_append(char str[], char c, int *len)
+{
+    //len je delka retezce, tedy udava pozici '\0'
+    str[*len] = c;
+    str[*len + 1] = '\0';
+    (*len)++;
+}
+
+/* funkce pro nacteni stringu ze souboru */
+char load_str(FILE *fp, char str[], int *len)
+{
+    char c;
+    *len = 0;
+    str[0] = '\0';
+
+    //preskoceni vsech mezer
+    while ( (c = fgetc(fp)) == ' ') {                                       ///skip_space()??
+        continue;
+    }
+
+    //konec radku odpovida konci dane mnoziny apod. => navrat
+    if (c == '\n') {
+        return c;
+    }
+
+    do {
+        //pokud c neni znak abecedy, vracim 0
+        if (check_char(c) == 0){
+            fprintf(stderr, "Char %c is not supported\n", c);
+            return 0;
+        }
+        str_append(str, c, len);      //prvni prubeh pouziva prvni znak po odstraneni mezer
+
+        c = fgetc(fp);       //ziskani noveho znaku
+
+        //kontrola konce retezce
+        if ( c == ' ' || c == '\n') {
+            return c;
+        }
+    } while (*len < ELEM_LEN - 1);
+
+    //odchod mimo while pouze pokud dojde k prekroceni max. delky prvku
+    fprintf(stderr, "Element (%s...) exceeds length of %d\n", str, ELEM_LEN - 1);
+    return 0;
+}
+
+/* funkce pro nacteni prvku radku do univerza */ ///TODO is_keyword(char str[])
+int load_uni(FILE *fp, uni_t *u)
+{
+    //inicializuji univerzum
+    uni_create(u);
+
+    char temp_s[ELEM_LEN];
+    char c;
+    int len;
+
+    do {
+        //abychom mohli kontrolovat jak '\n' tak 0, musime si
+        //navratovou hodnotu funkce load_str ulozit do promenne c
+        c = load_str(fp, temp_s, &len);
+
+        ///is_keyword(temp_s);
+
+        //pokud funkce load_str vrati 0, vratime 0
+        if (c == 0){
+            return 0;
+        }
+        //prodlouzime univerzum o nove nacteny string a opakujeme
+        if (uni_append(u, temp_s, len) == 0) {
+            return 0;
+        }
+    } while (c != '\n'); //pokud c je \n, jsme na konci radku -> konec nacitani
+
+    //jinak uspech
+    return 1;
+}
+
+/* funkce pro nacteni prvku radku do mnoziny */ ///TODO prvek prave 1
+int load_set(FILE *fp, uni_t *u)
+{
+    return 1;
+}
+
+/* funkce pro nacteni prvku radku do relace */ ///TODO prvek prave 1
+int load_rel(FILE *fp, uni_t *u)
+{
+    return 1;
+}
+
+/* funkce pro nacteni prikazu ze souboru */
+int load_com(FILE *fp, uni_t *u)
+{
+    return 1;
+}
+
+int text_load(FILE *fp, uni_t *u)
+{
+    //cti soubor po radcich
+    for (int lines = 1; lines <= LINES_MAX; lines++) {
+        //zjistim, o jaky typ radku se jedna
+        switch(fgetc(fp)) {
+            case 'U':
+                if (lines != 1) {
+                    fprintf(stderr, "Universe on an unexpected line (line %d)\n", lines);
+                    return 0;
+                }
+                if (load_uni(fp, u) == 0){
+                    return 0;
+                }
+                continue;
+
+            case 'S':
+                if (lines == 1) {
+                    fprintf(stderr, "Universe expected on line 1 instead of set\n");
+                    return 0;
+                }
+                load_set(fp, u);
+                continue;
+
+            case 'R':
+                if (lines == 1) {
+                    fprintf(stderr, "Universe expected on line 1 instead of relation\n");
+                    return 0;
+                }
+                load_rel(fp, u);
+                continue;
+
+            case 'C':
+                if (lines == 1) {
+                    fprintf(stderr, "Universe expected on line 1 instead of command\n");
+                    return 0;
+                }
+                load_com(fp, u);
+                continue;
+
+            case EOF:
+                return 1;
+
+            default:
+                fprintf(stderr, "Unidentified line number %d\n", lines);
+                return 0;
+        }
+    }
+
+    /*if (lines > LINES_MAX){ ??? } */
+
+    return 1;
+}
 
 /* funkce pro vraceni mnoziny */
 void set_print(set_t *s, uni_t *uni)
@@ -184,15 +373,6 @@ void set_print(set_t *s, uni_t *uni)
 		fprintf(stdout, "%s ", uni->elem_arr[s->elem_arr[i]]);
 	}
 	fprintf(stdout, "\n");
-
-	/*fprintf(stdout, "Set on line %d contains %d elements which are: ", s->line, s->length);
-	for(int i = 0; i < s->length; i++){
-		for(int j = 0; s->elem_arr[i][j] != '\0'; j++){
-			fprintf(stdout, "%c", s->elem_arr[i][j]);
-		}
-		fprintf(stdout, " ");
-	}
-	fprintf(stdout, "\n");*/
 }
 
 
@@ -264,7 +444,7 @@ void set_empty(set_t* s, int line)
         return;
     }
 
-    
+
     if (s[l].length == 0)
     {
         fprintf(stdout, "true\n", line);
@@ -285,7 +465,7 @@ void set_card(set_t* s, int line)
         return;
     }
 
-    
+
     fprintf(stdout, "Set on line %d contains %d elements.\n", line, s[l].length);
     return;
 }
@@ -406,7 +586,7 @@ void set_minus(set_t* s, uni_t* u, int line_a, int line_b)
     for (int i = 0; i < s[l_a].length; i++)
     {
         set_min[s[l_a].elem_arr[i]] = true;
-        
+
         for (int j = 0; j < s[l_b].length; j++)
         {
             if (s[l_a].elem_arr[i] == s[l_b].elem_arr[j])
@@ -490,6 +670,9 @@ void set_equals(set_t* s, uni_t* u, int line_a, int line_b)
 
 int main(int argc, char **argv)
 {
+    if(check_param(argc, argv) == 0){
+        return EXIT_FAILURE;
+    }
     uni_t uni;
     set_t set;
 
@@ -497,8 +680,10 @@ int main(int argc, char **argv)
 
     uni_create(&uni);
 
-    uni_append(&uni, "Ahoj", 5);
-    uni_append(&uni, "1234", 5);
+    text_load(file_open(argv), &uni);
+
+    //uni_append(&uni, "Ahoj", 5);
+    //uni_append(&uni, "1234", 5);
 
     set_create(&set, 1); //set on line 1, "Ahoj" "1234"
     set_append(&set, 0);
