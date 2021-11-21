@@ -128,9 +128,9 @@ int uni_append(uni_t *u, char *elem, int str_len)
 {
     //pokud je potreba, zvetsim pole ukazatelu na prvky univerza
     if (u->cap <= u->length) {
-        char **p;
+        char **p = NULL;
         p = realloc(u->elem_arr, sizeof(char *)*(u->cap + 1));
-        if(*p == NULL) {
+        if(p == NULL) {
             memory_err();
             return 0;
         }
@@ -158,7 +158,7 @@ int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ?
 {
     //pokud je potreba, zvetsim mnozinu
     if (s->cap <= s->length) {
-        int *p;
+        int *p = NULL;
         p = realloc(s->elem_arr, sizeof(int)*(s->cap + 1));
         if(p == NULL) {
             memory_err();
@@ -180,9 +180,9 @@ int data_append_s(data_t *d, set_t *s)
 {
     //pokud je potreba, alokuji vice pameti
     if (d->cap_s <= d->length_s) {
-        set_t **p;
+        set_t **p = NULL;
         p = realloc(d->arr_s, sizeof(set_t *)*(d->cap_s + 1));
-        if(*p == NULL) {
+        if(p == NULL) {
             memory_err();
             return 0;
         }
