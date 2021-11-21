@@ -522,26 +522,27 @@ int text_load(FILE *fp, data_t *d, uni_t *u)
 
 
 
-//find set on line [line]
+//find set defined on line [line]
 int set_line(set_t* s, int line)
 {
-    for (int i = 0; i < 3; i++)         //l < 3 ???, velikost [sets]... zbytek funguje
+    for (int i = 0; i < 3 && i < line; i++)             //l < 3 ???, velikost sets... zbytek funguje
     {
-        //find set on line [line]
+        //set on line [line] found
         if (s[i].line == line)
         {
             return i;
         }
     }
 
+    //set not found
     fprintf(stderr, "No set defined on line %d.\n", line);
     return -1;
 }
 
 //prints chosen universe elements
-void set_boolprint(bool* b, uni_t* u)
+void set_boolprint(char c, uni_t* u, bool* b)
 {
-    fprintf(stdout, "S ");
+    fprintf(stdout, "%c ", c);
 
     for (int i = 0; i < u->length; i++)
     {
@@ -556,6 +557,7 @@ void set_boolprint(bool* b, uni_t* u)
     return;
 }
 
+//returns whether or not is set on line [line_a] a subset of set on line [line_b]
 bool set_sub(set_t* s, uni_t* u, int l_a, int l_b)
 {
     bool set_b[u->length];   //elements of set on line [line_b]
@@ -569,43 +571,50 @@ bool set_sub(set_t* s, uni_t* u, int l_a, int l_b)
         set_b[s[l_b].elem_arr[i]] = true;
     }
 
+    //check set on line [line_a]
     for (int i = 0; i < s[l_a].length; i++)
     {
+        //extra element not contained in set on line [line_b] found
         if (!set_b[s[l_a].elem_arr[i]])
         {
             return false;
         }
     }
 
+    //no extra elements found
     return true;
 }
 
-//tiskne true nebo false podle toho, jestli je množina definovaná na řádku A prázdná nebo neprázdná
+//prints whether or not is set on line [line] empty
 void set_empty(set_t* s, int line)
 {
     int l = set_line(s, line);  //index of set on line [line]
 
+    //invalid argument [line]
     if (l == -1)
     {
         return;
     }
 
 
+    //set has length 0 - is empty
     if (s[l].length == 0)
     {
-        fprintf(stdout, "true\n", line);
+        fprintf(stdout, "true\n");
         return;
     }
 
-    fprintf(stdout, "false\n", line);
+    //set has length greater than 0
+    fprintf(stdout, "false\n");
     return;
 }
 
-//tiskne počet prvků v množině A (definované na řádku A)
+//prints number of elements in set on line [line]
 void set_card(set_t* s, int line)
 {
     int l = set_line(s, line);  //index of set on line [line]
 
+    //invalid argument [line]
     if (l == -1)
     {
         return;
@@ -616,11 +625,12 @@ void set_card(set_t* s, int line)
     return;
 }
 
-//tiskne doplněk množiny A
+//prints complement of set on line [line]
 void set_complement(set_t* s, uni_t* u, int line)
 {
     int l = set_line(s, line);  //index of set on line [line]
 
+    //invalid argument [line]
     if (l == -1)
     {
         return;
@@ -633,21 +643,23 @@ void set_complement(set_t* s, uni_t* u, int line)
         set_comp[i] = true;
     }
 
+    //elements contained in set on line [line_a]
     for (int i = 0; i < s[l].length; i++)
     {
         set_comp[s[l].elem_arr[i]] = false;
     }
 
-    set_boolprint(set_comp, u);
+    set_boolprint('S', u, set_comp);
     return;
 }
 
-//tiskne sjednocení množin A a B
+//prints union of sets on lines [line_a] and [line_b]
 void set_union(set_t* s, uni_t* u, int line_a, int line_b)
 {
     int l_a = set_line(s, line_a);  //index of set on line [line_a]
     int l_b = set_line(s, line_b);  //index of set on line [line_b]
 
+    //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
         return;
@@ -660,6 +672,7 @@ void set_union(set_t* s, uni_t* u, int line_a, int line_b)
         set_uni[i] = false;
     }
 
+    //elements contained in sets on line [l] - [line_a] and [line_b]
     int l = l_a;
     for (int i = 0; i < 2; i++)
     {
@@ -672,16 +685,17 @@ void set_union(set_t* s, uni_t* u, int line_a, int line_b)
     }
 
 
-    set_boolprint(set_uni, u);
+    set_boolprint('S', u, set_uni);
     return;
 }
 
-//tiskne průnik množin A a B
+//prints intersect of sets on lines [line_a] and [line_b]
 void set_intersect(set_t* s, uni_t* u, int line_a, int line_b)
 {
     int l_a = set_line(s, line_a);  //index of set on line [line_a]
     int l_b = set_line(s, line_b);  //index of set on line [line_b]
 
+    //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
         return;
@@ -694,6 +708,7 @@ void set_intersect(set_t* s, uni_t* u, int line_a, int line_b)
         set_int[i] = false;
     }
 
+    //elements contained in both sets on lines [line_a] and [line_b]
     for (int i = 0; i < s[l_a].length; i++)
     {
         for (int j = 0; j < s[l_b].length; j++)
@@ -707,16 +722,17 @@ void set_intersect(set_t* s, uni_t* u, int line_a, int line_b)
     }
 
 
-    set_boolprint(set_int, u);
+    set_boolprint('S', u, set_int);
     return;
 }
 
-//tiskne rozdíl množin A \ B
+//prints set on line [line_a] minus set on line [line_b]
 void set_minus(set_t* s, uni_t* u, int line_a, int line_b)
 {
     int l_a = set_line(s, line_a);  //index of set on line [line_a]
     int l_b = set_line(s, line_b);  //index of set on line [line_b]
 
+    //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
         return;
@@ -729,87 +745,98 @@ void set_minus(set_t* s, uni_t* u, int line_a, int line_b)
         set_min[i] = false;
     }
 
+    //elements contained in set on line [line_a]
     for (int i = 0; i < s[l_a].length; i++)
     {
         set_min[s[l_a].elem_arr[i]] = true;
-
-        for (int j = 0; j < s[l_b].length; j++)
-        {
-            if (s[l_a].elem_arr[i] == s[l_b].elem_arr[j])
-            {
-                set_min[s[l_a].elem_arr[i]] = false;
-                break;
-            }
-        }
     }
 
-    set_boolprint(set_min, u);
+    //elements contained in set on line [line_b]
+    for (int i = 0; i < s[l_b].length; i++)
+    {
+        set_min[s[l_b].elem_arr[i]] = false;
+    }
+
+    set_boolprint('S', u, set_min);
     return;
 }
 
-//tiskne true nebo false podle toho, jestli je množina A podmnožinou množiny B
+//prints whether or not is set on line [line_a] a subset of set on line [line_b]
 void set_subseteq(set_t* s, uni_t* u, int line_a, int line_b)
 {
     int l_a = set_line(s, line_a);  //index of set on line [line_a]
     int l_b = set_line(s, line_b);  //index of set on line [line_b]
 
+    //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
         return;
     }
 
 
+    //set on line [line_a] is a subset of set on line [line_b]
     if (set_sub(s, u, l_a, l_b))
     {
-        fprintf(stdout, "true\n", line_a, line_b);
+        fprintf(stdout, "true\n");
         return;
     }
 
-    fprintf(stdout, "false\n", line_a, line_b);
+    //set on line [line_a] isn't a subset of set on line [line_b]
+    fprintf(stdout, "false\n");
     return;
 }
 
-//tiskne true nebo false, jestli je množina A vlastní podmnožina množiny B
+//prints whether or not is set on line [line_a] a proper subset of set on line [line_b]
 void set_subset(set_t* s, uni_t* u, int line_a, int line_b)
 {
     int l_a = set_line(s, line_a);  //index of set on line [line_a]
     int l_b = set_line(s, line_b);  //index of set on line [line_b]
 
+    //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
         return;
     }
 
 
+    //set on line [line_a] is a subset of set on line [line_b]
+    ///and set on line [line_b] isn't a subset of set on line [line_a]
     if (set_sub(s, u, l_a, l_b) && !set_sub(s, u, l_b, l_a))
     {
-        fprintf(stdout, "true\n", line_a, line_b);
+        fprintf(stdout, "true\n");
         return;
     }
 
-    fprintf(stdout, "false\n", line_a, line_b);
+    //set on line [line_a] isn't a subset of set on line [line_b]
+    //and/or set on line [line_b] is a subset of set on line [line_a]
+    fprintf(stdout, "false\n");
     return;
 }
 
-//tiskne true nebo false, jestli jsou množiny rovny
+//prints whether or not are sets on lines [line_a] and [line_b] equal
 void set_equals(set_t* s, uni_t* u, int line_a, int line_b)
 {
     int l_a = set_line(s, line_a);  //index of set on line [line_a]
     int l_b = set_line(s, line_b);  //index of set on line [line_b]
 
+    //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
         return;
     }
 
 
+    //set on line [line_a] is a subset of set on line [line_b]
+    ///and set on line [line_b] is a subset of set on line [line_a]
     if (set_sub(s, u, l_a, l_b) && set_sub(s, u, l_b, l_a))
     {
-        fprintf(stdout, "true\n", line_a, line_b);
+        fprintf(stdout, "true\n");
         return;
     }
 
-    fprintf(stdout, "false\n", line_a, line_b);
+    //set on line [line_a] isn't a subset of set on line [line_b]
+    ///and/or set on line [line_b] isn't a subset of set on line [line_a]
+    fprintf(stdout, "false\n");
     return;
 }
 
@@ -836,11 +863,12 @@ int main(int argc, char **argv)
     set_print(data.arr_s[1], &uni);
     printf("Kontrola cteni ze souboru\n\n");
 
+
     //uni_append(&uni, "Ahoj", 5);
     //uni_append(&uni, "1234", 5);
 
+    set_create(&set, 1); //set on line 1, "a" "b"
 
-    set_create(&set, 1); //set on line 1, "Ahoj" "1234"
     set_append(&set, 0);
     set_append(&set, 1);
 
@@ -851,14 +879,14 @@ int main(int argc, char **argv)
     set_print(&set, &uni);
 
 
-    set_create(&set, 3); //set on line 3, "1234" "1234"
+    set_create(&set, 3); //set on line 3, "b" "b"
     set_append(&set, 1);
     set_append(&set, 1);
     sets[1] = set;
 
     set_print(&set, &uni);
 
-    set_create(&set, 4); //set on line 4, empty*/
+    set_create(&set, 4); //set on line 4, empty
     sets[2] = set;
 
     set_print(&set, &uni);
