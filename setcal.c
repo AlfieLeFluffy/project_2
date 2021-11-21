@@ -130,7 +130,7 @@ int uni_append(uni_t *u, char *elem, int str_len)
     if (u->cap <= u->length) {
         char **p;
         p = realloc(u->elem_arr, sizeof(char *)*(u->cap + 1));
-        if(p == NULL) {
+        if(*p == NULL) {
             memory_err();
             return 0;
         }
@@ -182,7 +182,7 @@ int data_append_s(data_t *d, set_t *s)
     if (d->cap_s <= d->length_s) {
         set_t **p;
         p = realloc(d->arr_s, sizeof(set_t *)*(d->cap_s + 1));
-        if(p == NULL) {
+        if(*p == NULL) {
             memory_err();
             return 0;
         }
