@@ -450,6 +450,25 @@ int load_set(FILE *fp, data_t *d, uni_t *u, int line)
     return 1;
 }
 
+/* funkce pro pridani univerza jako mnoziny */
+int u_to_s(uni_t *u, data_t *d, int line)
+{
+    set_t *s = malloc(sizeof(set_t *));
+    set_create(s, line);
+    for (int i = 0; i < u->length; i++){
+        //naplnime mnozinu vsemi indexy univerza
+        if (set_append(s, i) == 0){
+            return 0;
+        }
+    }
+    //ulozime mnozinu do seznamu
+    if (data_append_s(d, s) == 0){
+            return 0;
+    }
+
+    return 1;
+}
+
 /* funkce pro nacteni prvku radku do relace */ ///TODO prvek prave 1
 int load_rel(FILE *fp, uni_t *u)
 {
@@ -476,6 +495,10 @@ int text_load(FILE *fp, data_t *d, uni_t *u)
                 if (load_uni(fp, u) == 0){
                     return 0;
                 }
+                if (u_to_s(u, d, lines) == 0){
+                    return 0;
+                }
+
                 continue;
 
             case 'S':
@@ -894,13 +917,13 @@ int main(int argc, char **argv)
 
     set_empty(&data, 4);
     set_card(&data, 2);
-    set_complement(&data, &uni, 3);
-    set_union(&data, &uni, 1, 3);
+    set_complement(&data, &uni, 1);
+    set_union(&data, &uni, 2, 3);
     set_intersect(&data, &uni, 1, 3);
-    set_minus(&data, &uni, 1, 3);
-    set_subseteq(&data, &uni, 3, 4);
-    set_subset(&data, &uni, 3, 1);
-    set_equals(&data, &uni, 1, 3);
+    set_minus(&data, &uni, 2, 3);
+    set_subseteq(&data, &uni, 2, 3);
+    set_subset(&data, &uni, 3, 2);
+    set_equals(&data, &uni, 2, 3);
 
     //data_destroy(&data)
 
