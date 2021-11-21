@@ -49,8 +49,11 @@ typedef struct{
 
 typedef struct{
     set_t **arr_s;      //pole ukazatelu na vsechny mnoziny
+    int length_s;
+    int cap_s;
     rel_t **arr_r;      //pole ukazatelu na vsechny relace
-    ///TODO capacity na oba
+    int length_r;
+    int cap_r;          ///TODO capacity na oba
 } data_t;
 
 /** definice globalnich funkci **/
@@ -60,6 +63,27 @@ typedef struct{
 void memory_err()
 {
     fprintf(stderr, "Memory error\n");
+}
+
+/* funkce pro tisk univerza */
+void uni_print(uni_t *u)
+{
+    printf("U ");
+    for (int i = 0; i < u->length; i++) {
+        printf("%s ", u->elem_arr[i]);
+    }
+    printf("\n");
+}
+
+/* funkce pro tisk mnoziny */
+void set_print(set_t *s, uni_t *u)
+{
+	fprintf(stdout, "Set on line %d contains %d elements which are: ", s->line, s->length);
+
+	for(int i = 0; i < s->length; i++){
+		fprintf(stdout, "%s ", u->elem_arr[s->elem_arr[i]]);
+	}
+	fprintf(stdout, "\n");
 }
 
 /* funkce pro inicializaci univerza */
@@ -92,7 +116,11 @@ void rel_create(rel_t *r, int line)
 void data_create(data_t *d)
 {
     d->arr_s = NULL;
+    d->length_s = 0;
+    d->cap_s = 0;
     d->arr_r = NULL;
+    d->length_r = 0;
+    d->cap_r = 0;
 }
 
 /* funkce pro rozsireni univerza  o novy prvek*/
@@ -147,10 +175,39 @@ int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ?
     return 1;
 }
 
+/* funkce pro rozsireni dat o novou mnozinu */
+int data_append_s(data_t *d, set_t *s)
+{
+    //pokud je potreba, alokuji vice pameti
+    if (d->cap_s <= d->length_s) {
+        set_t **p;
+        p = realloc(d->arr_s, sizeof(set_t *)*(d->cap_s + 1));
+        if(p == NULL) {
+            memory_err();
+            return 0;
+        }
+        d->arr_s = p;
+        (d->cap_s)++;
+    }
+
+    //priradim na nove misto dany uakzatel na mnozinu
+    d->arr_s[d->length_s] = s;
+    d->length_s++;
+
+    return 1;
+}
+
+/* funkce pro rozsireni dat o novou relaci */
+int data_append_r(data_t *d, rel_t *r)
+{
+
+    return 1;
+}
+
 /* funkce pro uvolneni pameti alokovane pro univerzum */
 void uni_destroy(uni_t *u)
 {
-    for (int i = 0; i < u->length ; i++) {
+    for (int i = 0; i < u->cap ; i++) {
         if (u->elem_arr[i] != NULL) {
             free(u->elem_arr[i]);
         }
@@ -173,19 +230,39 @@ void set_destroy(set_t *s)
     s->cap = 0;
 }
 
+/* funkce pro uvolneni pameti alokovane pro relaci */
+void rel_destroy(rel_t *r)
+{
+    /*if (s->elem_arr != NULL) {
+        free(s->elem_arr);
+    }
+    s->length = 0;
+    s->cap = 0;*/
+}
+
 /* funkce pro uvolneni pameti alokovane pro data */
 void data_destroy(data_t *d)
 {
+    //dealokace mnozin
     if (d->arr_s != NULL) {
+        for (int i; i < d->cap_s; i++) {
+            set_destroy(d->arr_s[i]);
+        }
+
         free(d->arr_s);
     }
+
+    //dealokace relaci
     if (d->arr_r != NULL) {
+        for (int i; i < d->cap_r; i++) {
+            rel_destroy(d->arr_r[i]);
+        }
+
         free(d->arr_r);
     }
 }
 
 /* funkce pro kontrolu vlozeneho parametru*/
-
 int check_param(int argc, char **argv)
 {
     if (argc != 2){
@@ -200,7 +277,7 @@ int check_param(int argc, char **argv)
 }
 
 /* funkce pro otevreni souboru */
-FILE *file_open(char **argv)                            /** zavrit soubor fp**/
+FILE *file_open(char **argv)                      ///TODO zavrit soubor fp
 {
     FILE *fp = fopen(argv[1], "r");
     return fp;
@@ -227,8 +304,9 @@ void str_append(char str[], char c, int *len)
 /* funkce pro nacteni stringu ze souboru */
 char load_str(FILE *fp, char str[], int *len)
 {
+    //fce vraci pri uspechu znak, ktery bezprostredne nasleduje po danem retezci (mezera nebo \n)
     char c;
-    *len = 0;
+    *len = 0;  //delka daneho retezce ... potreba pro nacitani do univerza
     str[0] = '\0';
 
     //preskoceni vsech mezer
@@ -279,7 +357,7 @@ int load_uni(FILE *fp, uni_t *u)
 
         ///is_keyword(temp_s);
 
-        //pokud funkce load_str vrati 0, vratime 0
+        //pokud funkce load_str vrati 0 (=chyba), vratime 0
         if (c == 0){
             return 0;
         }
@@ -293,9 +371,82 @@ int load_uni(FILE *fp, uni_t *u)
     return 1;
 }
 
-/* funkce pro nacteni prvku radku do mnoziny */ ///TODO prvek prave 1
-int load_set(FILE *fp, uni_t *u)
+/* funkce pro zjisteni, zda se dany prvek vyskytuje v mnozine */
+int isin_set(set_t s,int elem)
 {
+    for (int i = 0; i < s.length; i++) {
+        if (s.elem_arr[i] == elem) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* funkce pro nacteni jednoho prvku do mnoziny */
+int elem_to_s(uni_t *u, set_t *s, char temp_s[], int line)
+{
+    bool found;
+    found = false;
+
+    for (int i = 0; i < u->length; i++) {
+        //kontrola, zda nalezi dany prvek univerzu
+        if (strcmp(temp_s, u->elem_arr[i]) == 0) {
+            //kontrola, zda uz dany prvek v mnozine neni
+            if (isin_set(*s, i) == 1) {
+                fprintf(stderr, "Element %s duplicate on line %d\n", temp_s, line);
+                return 0;
+            }
+
+            //kontrola, zda se povedlo prodlouzeni mnoziny
+            if (set_append(s, i) == 0) {
+                return 0;
+            }
+
+            //pokud retezec projde kontrolami, je korektni
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        fprintf(stderr, "Element %s not in universe (line %d)\n", temp_s, line);
+        return 0;
+    }
+
+    //jinak uspech
+    return 1;
+}
+
+/* funkce pro nacteni prvku radku do mnoziny */
+int load_set(FILE *fp, data_t *d, uni_t *u, int line)
+{
+    set_t *s = malloc(sizeof(set_t *));
+    char temp_s[ELEM_LEN];
+    char c;
+    int len;    //delka daneho retezce, vyuziva load_uni => potreba jako paramentr funkce load_str
+
+    set_create(s, line);
+
+    do {
+        c = load_str(fp, temp_s, &len);
+
+        //pokud funkce load_str vrati 0 (=chyba), vratime 0
+        if (c == 0){
+            return 0;
+        }
+
+        //nacteni prvku do mnoziny
+        if (elem_to_s(u, s, temp_s, line) == 0) {
+            return 0;
+        }
+
+    } while( c != '\n');
+
+    //pridani mnoziny do dat
+    if (data_append_s(d, s) == 0) {
+        return 0;
+    }
+    //jinak uspech
     return 1;
 }
 
@@ -311,7 +462,7 @@ int load_com(FILE *fp, uni_t *u)
     return 1;
 }
 
-int text_load(FILE *fp, uni_t *u)
+int text_load(FILE *fp, data_t *d, uni_t *u)
 {
     //cti soubor po radcich
     for (int lines = 1; lines <= LINES_MAX; lines++) {
@@ -332,7 +483,10 @@ int text_load(FILE *fp, uni_t *u)
                     fprintf(stderr, "Universe expected on line 1 instead of set\n");
                     return 0;
                 }
-                load_set(fp, u);
+                if (load_set(fp, d, u, lines) == 0) {
+                    return 0;
+                }
+
                 continue;
 
             case 'R':
@@ -365,15 +519,7 @@ int text_load(FILE *fp, uni_t *u)
     return 1;
 }
 
-/* funkce pro vraceni mnoziny */
-void set_print(set_t *s, uni_t *uni)
-{
-	fprintf(stdout, "Set on line %d contains %d elements which are: ", s->line, s->length);
-	for(int i = 0; i < s->length; i++){
-		fprintf(stdout, "%s ", uni->elem_arr[s->elem_arr[i]]);
-	}
-	fprintf(stdout, "\n");
-}
+
 
 
 //find set on line [line]
@@ -673,21 +819,33 @@ int main(int argc, char **argv)
     if(check_param(argc, argv) == 0){
         return EXIT_FAILURE;
     }
+
     uni_t uni;
     set_t set;
+    data_t data;
 
-    set_t sets[3];
+    data_create(&data);
 
-    uni_create(&uni);
+    if (text_load(file_open(argv), &data, &uni) == 0) {
+        return EXIT_FAILURE;
+    }
 
-    text_load(file_open(argv), &uni);
+    printf("Kontrola cteni ze souboru\n");
+    uni_print(&uni);
+    set_print(data.arr_s[0], &uni);
+    set_print(data.arr_s[1], &uni);
+    printf("Kontrola cteni ze souboru\n\n");
 
     //uni_append(&uni, "Ahoj", 5);
     //uni_append(&uni, "1234", 5);
 
+
     set_create(&set, 1); //set on line 1, "Ahoj" "1234"
     set_append(&set, 0);
     set_append(&set, 1);
+
+    //check
+    set_t sets[3];
     sets[0] = set;
 
     set_print(&set, &uni);
@@ -705,10 +863,6 @@ int main(int argc, char **argv)
 
     set_print(&set, &uni);
 
-    /*TODO if (append == 1) {
-        return EXIT_FAILURE
-    }*/
-
 
     set_empty(sets, 4);
     set_card(sets, 2);
@@ -719,6 +873,8 @@ int main(int argc, char **argv)
     set_subseteq(sets, &uni, 3, 4);
     set_subset(sets, &uni, 3, 1);
     set_equals(sets, &uni, 1, 3);
+
+    //data_destroy(&d)
 
     set_destroy(&set);
     uni_destroy(&uni);
