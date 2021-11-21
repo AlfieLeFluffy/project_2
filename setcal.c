@@ -523,12 +523,12 @@ int text_load(FILE *fp, data_t *d, uni_t *u)
 
 
 //find set defined on line [line]
-int set_line(set_t* s, int line)
+int set_line(data_t* data, int line)
 {
-    for (int i = 0; i < 3 && i < line; i++)             //l < 3 ???, velikost sets... zbytek funguje
+    for (int i = 0; i < data->length_s && i < line; i++)
     {
         //set on line [line] found
-        if (s[i].line == line)
+        if (data->arr_s[i]->line == line)
         {
             return i;
         }
@@ -558,7 +558,7 @@ void set_boolprint(char c, uni_t* u, bool* b)
 }
 
 //returns whether or not is set on line [line_a] a subset of set on line [line_b]
-bool set_sub(set_t* s, uni_t* u, int l_a, int l_b)
+bool set_sub(data_t* data, uni_t* u, int l_a, int l_b)
 {
     bool set_b[u->length];   //elements of set on line [line_b]
     for (int i = 0; i < u->length; i++)
@@ -566,16 +566,16 @@ bool set_sub(set_t* s, uni_t* u, int l_a, int l_b)
         set_b[i] = false;
     }
 
-    for (int i = 0; i < s[l_b].length; i++)
+    for (int i = 0; i < data->arr_s[l_b]->length; i++)
     {
-        set_b[s[l_b].elem_arr[i]] = true;
+        set_b[data->arr_s[l_b]->elem_arr[i]] = true;
     }
 
     //check set on line [line_a]
-    for (int i = 0; i < s[l_a].length; i++)
+    for (int i = 0; i < data->arr_s[l_a]->length; i++)
     {
         //extra element not contained in set on line [line_b] found
-        if (!set_b[s[l_a].elem_arr[i]])
+        if (!set_b[data->arr_s[l_a]->elem_arr[i]])
         {
             return false;
         }
@@ -586,9 +586,9 @@ bool set_sub(set_t* s, uni_t* u, int l_a, int l_b)
 }
 
 //prints whether or not is set on line [line] empty
-void set_empty(set_t* s, int line)
+void set_empty(data_t* data, int line)
 {
-    int l = set_line(s, line);  //index of set on line [line]
+    int l = set_line(data, line);  //index of set on line [line]
 
     //invalid argument [line]
     if (l == -1)
@@ -598,7 +598,7 @@ void set_empty(set_t* s, int line)
 
 
     //set has length 0 - is empty
-    if (s[l].length == 0)
+    if (data->arr_s[l]->length == 0)
     {
         fprintf(stdout, "true\n");
         return;
@@ -610,9 +610,9 @@ void set_empty(set_t* s, int line)
 }
 
 //prints number of elements in set on line [line]
-void set_card(set_t* s, int line)
+void set_card(data_t* data, int line)
 {
-    int l = set_line(s, line);  //index of set on line [line]
+    int l = set_line(data, line);  //index of set on line [line]
 
     //invalid argument [line]
     if (l == -1)
@@ -621,14 +621,14 @@ void set_card(set_t* s, int line)
     }
 
 
-    fprintf(stdout, "Set on line %d contains %d elements.\n", line, s[l].length);
+    fprintf(stdout, "Set on line %d contains %d elements.\n", line, data->arr_s[l]->length);
     return;
 }
 
 //prints complement of set on line [line]
-void set_complement(set_t* s, uni_t* u, int line)
+void set_complement(data_t* data, uni_t* u, int line)
 {
-    int l = set_line(s, line);  //index of set on line [line]
+    int l = set_line(data, line);  //index of set on line [line]
 
     //invalid argument [line]
     if (l == -1)
@@ -644,9 +644,9 @@ void set_complement(set_t* s, uni_t* u, int line)
     }
 
     //elements contained in set on line [line_a]
-    for (int i = 0; i < s[l].length; i++)
+    for (int i = 0; i < data->arr_s[l]->length; i++)
     {
-        set_comp[s[l].elem_arr[i]] = false;
+        set_comp[data->arr_s[l]->elem_arr[i]] = false;
     }
 
     set_boolprint('S', u, set_comp);
@@ -654,10 +654,10 @@ void set_complement(set_t* s, uni_t* u, int line)
 }
 
 //prints union of sets on lines [line_a] and [line_b]
-void set_union(set_t* s, uni_t* u, int line_a, int line_b)
+void set_union(data_t* data, uni_t* u, int line_a, int line_b)
 {
-    int l_a = set_line(s, line_a);  //index of set on line [line_a]
-    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+    int l_a = set_line(data, line_a);  //index of set on line [line_a]
+    int l_b = set_line(data, line_b);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -676,9 +676,9 @@ void set_union(set_t* s, uni_t* u, int line_a, int line_b)
     int l = l_a;
     for (int i = 0; i < 2; i++)
     {
-        for (int j = 0; j < s[l].length; j++)
+        for (int j = 0; j < data->arr_s[l]->length; j++)
         {
-            set_uni[s[l].elem_arr[j]] = true;
+            set_uni[data->arr_s[l]->elem_arr[j]] = true;
         }
 
         l = l_b;
@@ -690,10 +690,10 @@ void set_union(set_t* s, uni_t* u, int line_a, int line_b)
 }
 
 //prints intersect of sets on lines [line_a] and [line_b]
-void set_intersect(set_t* s, uni_t* u, int line_a, int line_b)
+void set_intersect(data_t* data, uni_t* u, int line_a, int line_b)
 {
-    int l_a = set_line(s, line_a);  //index of set on line [line_a]
-    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+    int l_a = set_line(data, line_a);  //index of set on line [line_a]
+    int l_b = set_line(data, line_b);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -709,13 +709,13 @@ void set_intersect(set_t* s, uni_t* u, int line_a, int line_b)
     }
 
     //elements contained in both sets on lines [line_a] and [line_b]
-    for (int i = 0; i < s[l_a].length; i++)
+    for (int i = 0; i < data->arr_s[l_a]->length; i++)
     {
-        for (int j = 0; j < s[l_b].length; j++)
+        for (int j = 0; j < data->arr_s[l_b]->length; j++)
         {
-            if (s[l_a].elem_arr[i] == s[l_b].elem_arr[j])
+            if (data->arr_s[l_a]->elem_arr[i] == data->arr_s[l_b]->elem_arr[j])
             {
-                set_int[s[l_a].elem_arr[i]] = true;
+                set_int[data->arr_s[l_a]->elem_arr[i]] = true;
                 break;
             }
         }
@@ -727,10 +727,10 @@ void set_intersect(set_t* s, uni_t* u, int line_a, int line_b)
 }
 
 //prints set on line [line_a] minus set on line [line_b]
-void set_minus(set_t* s, uni_t* u, int line_a, int line_b)
+void set_minus(data_t* data, uni_t* u, int line_a, int line_b)
 {
-    int l_a = set_line(s, line_a);  //index of set on line [line_a]
-    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+    int l_a = set_line(data, line_a);  //index of set on line [line_a]
+    int l_b = set_line(data, line_b);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -746,15 +746,15 @@ void set_minus(set_t* s, uni_t* u, int line_a, int line_b)
     }
 
     //elements contained in set on line [line_a]
-    for (int i = 0; i < s[l_a].length; i++)
+    for (int i = 0; i < data->arr_s[l_a]->length; i++)
     {
-        set_min[s[l_a].elem_arr[i]] = true;
+        set_min[data->arr_s[l_a]->elem_arr[i]] = true;
     }
 
     //elements contained in set on line [line_b]
-    for (int i = 0; i < s[l_b].length; i++)
+    for (int i = 0; i < data->arr_s[l_b]->length; i++)
     {
-        set_min[s[l_b].elem_arr[i]] = false;
+        set_min[data->arr_s[l_b]->elem_arr[i]] = false;
     }
 
     set_boolprint('S', u, set_min);
@@ -762,10 +762,10 @@ void set_minus(set_t* s, uni_t* u, int line_a, int line_b)
 }
 
 //prints whether or not is set on line [line_a] a subset of set on line [line_b]
-void set_subseteq(set_t* s, uni_t* u, int line_a, int line_b)
+void set_subseteq(data_t* data, uni_t* u, int line_a, int line_b)
 {
-    int l_a = set_line(s, line_a);  //index of set on line [line_a]
-    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+    int l_a = set_line(data, line_a);  //index of set on line [line_a]
+    int l_b = set_line(data, line_b);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -775,7 +775,7 @@ void set_subseteq(set_t* s, uni_t* u, int line_a, int line_b)
 
 
     //set on line [line_a] is a subset of set on line [line_b]
-    if (set_sub(s, u, l_a, l_b))
+    if (set_sub(data, u, l_a, l_b))
     {
         fprintf(stdout, "true\n");
         return;
@@ -787,10 +787,10 @@ void set_subseteq(set_t* s, uni_t* u, int line_a, int line_b)
 }
 
 //prints whether or not is set on line [line_a] a proper subset of set on line [line_b]
-void set_subset(set_t* s, uni_t* u, int line_a, int line_b)
+void set_subset(data_t* data, uni_t* u, int line_a, int line_b)
 {
-    int l_a = set_line(s, line_a);  //index of set on line [line_a]
-    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+    int l_a = set_line(data, line_a);  //index of set on line [line_a]
+    int l_b = set_line(data, line_b);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -801,7 +801,7 @@ void set_subset(set_t* s, uni_t* u, int line_a, int line_b)
 
     //set on line [line_a] is a subset of set on line [line_b]
     ///and set on line [line_b] isn't a subset of set on line [line_a]
-    if (set_sub(s, u, l_a, l_b) && !set_sub(s, u, l_b, l_a))
+    if (set_sub(data, u, l_a, l_b) && !set_sub(data, u, l_b, l_a))
     {
         fprintf(stdout, "true\n");
         return;
@@ -814,10 +814,10 @@ void set_subset(set_t* s, uni_t* u, int line_a, int line_b)
 }
 
 //prints whether or not are sets on lines [line_a] and [line_b] equal
-void set_equals(set_t* s, uni_t* u, int line_a, int line_b)
+void set_equals(data_t* data, uni_t* u, int line_a, int line_b)
 {
-    int l_a = set_line(s, line_a);  //index of set on line [line_a]
-    int l_b = set_line(s, line_b);  //index of set on line [line_b]
+    int l_a = set_line(data, line_a);  //index of set on line [line_a]
+    int l_b = set_line(data, line_b);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -828,7 +828,7 @@ void set_equals(set_t* s, uni_t* u, int line_a, int line_b)
 
     //set on line [line_a] is a subset of set on line [line_b]
     ///and set on line [line_b] is a subset of set on line [line_a]
-    if (set_sub(s, u, l_a, l_b) && set_sub(s, u, l_b, l_a))
+    if (set_sub(data, u, l_a, l_b) && set_sub(data, u, l_b, l_a))
     {
         fprintf(stdout, "true\n");
         return;
@@ -867,7 +867,7 @@ int main(int argc, char **argv)
     //uni_append(&uni, "Ahoj", 5);
     //uni_append(&uni, "1234", 5);
 
-    set_create(&set, 1); //set on line 1, "a" "b"
+    /*set_create(&set, 1); //set on line 1, "a" "b"
 
     set_append(&set, 0);
     set_append(&set, 1);
@@ -889,20 +889,20 @@ int main(int argc, char **argv)
     set_create(&set, 4); //set on line 4, empty
     sets[2] = set;
 
-    set_print(&set, &uni);
+    set_print(&set, &uni);*/
 
 
-    set_empty(sets, 4);
-    set_card(sets, 2);
-    set_complement(sets, &uni, 3);
-    set_union(sets, &uni, 1, 3);
-    set_intersect(sets, &uni, 1, 3);
-    set_minus(sets, &uni, 1, 3);
-    set_subseteq(sets, &uni, 3, 4);
-    set_subset(sets, &uni, 3, 1);
-    set_equals(sets, &uni, 1, 3);
+    set_empty(&data, 4);
+    set_card(&data, 2);
+    set_complement(&data, &uni, 3);
+    set_union(&data, &uni, 1, 3);
+    set_intersect(&data, &uni, 1, 3);
+    set_minus(&data, &uni, 1, 3);
+    set_subseteq(&data, &uni, 3, 4);
+    set_subset(&data, &uni, 3, 1);
+    set_equals(&data, &uni, 1, 3);
 
-    //data_destroy(&d)
+    //data_destroy(&data)
 
     set_destroy(&set);
     uni_destroy(&uni);
