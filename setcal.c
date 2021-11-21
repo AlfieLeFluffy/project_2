@@ -408,7 +408,7 @@ int elem_to_s(uni_t *u, set_t *s, char temp_s[], int line)
         }
     }
 
-    if (!found) {
+    if (!found && s->length != 0) {
         fprintf(stderr, "Element %s not in universe (line %d)\n", temp_s, line);
         return 0;
     }
