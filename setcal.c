@@ -355,12 +355,21 @@ int load_uni(FILE *fp, uni_t *u)
         //navratovou hodnotu funkce load_str ulozit do promenne c
         c = load_str(fp, temp_s, &len);
 
-        ///is_keyword(temp_s);
-
         //pokud funkce load_str vrati 0 (=chyba), vratime 0
         if (c == 0){
             return 0;
         }
+
+        ///is_keyword(temp_s);
+
+        //kontrola, zda uz neni prvek v univerzu
+        for (int i = 0; i < u->length; i++) {
+            if (strcmp(temp_s, u->elem_arr[i]) == 0) {
+                fprintf(stderr, "Element %s duplicate in universe\n", temp_s);
+                return 0;
+            }
+        }
+
         //prodlouzime univerzum o nove nacteny string a opakujeme
         if (uni_append(u, temp_s, len) == 0) {
             return 0;
