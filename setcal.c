@@ -2,14 +2,12 @@
  *
  * setcal.c
  *
- * ver 0.1
+ * ver 0.2
  * =========================
  *
- * 20.11.2021
+ * 23.11.2021
  *
  *******************************/
-
-/*TODO chybova hlaseni*/
 
 /** hlavickove soubory **/
 #include <stdio.h>
@@ -19,7 +17,7 @@
 
 /** definice konstant **/
 #define ELEM_LEN 31         //maximalni povolena delka retezce + 1
-#define LINES_MAX 1000      //max podporovany pocet radku v souboru
+#define LINES_MAX 1000      //max. podporovany pocet radku v souboru
 
 /** definice novych datovych typu **/
 typedef struct{
@@ -53,13 +51,13 @@ typedef struct{
     int cap_s;
     rel_t **arr_r;      //pole ukazatelu na vsechny relace
     int length_r;
-    int cap_r;          ///TODO capacity na oba
+    int cap_r;
 } data_t;
 
 /** definice globalnich funkci **/
 //funkce pri uspechu vraci 1, pri neuspechu 0
 
-//vytiskne memory error
+/* prints memory error */
 void memory_err()
 {
     fprintf(stderr, "Memory error\n");
@@ -75,13 +73,24 @@ void uni_print(uni_t *u)
     printf("\n");
 }
 
-/* funkce pro tisk mnoziny */
+/* function for printing a set */
 void set_print(set_t *s, uni_t *u)
 {
 	fprintf(stdout, "Set on line %d contains %d elements which are: ", s->line, s->length);
 
 	for(int i = 0; i < s->length; i++){
 		fprintf(stdout, "%s ", u->elem_arr[s->elem_arr[i]]);
+	}
+	fprintf(stdout, "\n");
+}
+
+/* function for printing a relation */
+void rel_print(rel_t *r, uni_t *u)
+{
+    fprintf(stdout, "Relation on line %d contains %d elements which are: ", r->line, r->length);
+
+	for(int i = 0; i < r->length; i++){
+		fprintf(stdout, "(%s %s) ", u->elem_arr[r->elem_arr[i].e_1], u->elem_arr[r->elem_arr[i].e_2] );
 	}
 	fprintf(stdout, "\n");
 }
@@ -126,6 +135,11 @@ void data_create(data_t *d)
 /* funkce pro rozsireni univerza  o novy prvek*/
 int uni_append(uni_t *u, char *elem, int str_len)
 {
+    //kontrola, zda neni retezec prazdny - kvuli konci radku
+    if (str_len == 0) {
+        return 1;
+    }
+
     //pokud je potreba, zvetsim pole ukazatelu na prvky univerza
     if (u->cap <= u->length) {
         char **p = NULL;
@@ -175,10 +189,33 @@ int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ?
     return 1;
 }
 
-/* funkce pro rozsireni dat o novou mnozinu */
+/* function for adding new pair to relation */
+int rel_append(rel_t *r, elpair_t pair)
+{
+    //if needed, increase relation's capacity
+    if (r->cap <= r->length) {
+        elpair_t *p = NULL;
+        p = realloc(r->elem_arr, sizeof(elpair_t)*(r->cap + 1));
+        if(p == NULL) {
+            memory_err();
+            return 0;
+        }
+        r->elem_arr = p;
+        r->cap++;
+    }
+
+    //copy a new pair to relation
+    r->elem_arr[r->length].e_1 = pair.e_1;
+    r->elem_arr[r->length].e_2 = pair.e_2;
+    r->length++;
+
+    return 1;
+}
+
+/* function for adding a new set to data */
 int data_append_s(data_t *d, set_t *s)
 {
-    //pokud je potreba, alokuji vice pameti
+    //if needed, allocate more memory
     if (d->cap_s <= d->length_s) {
         set_t **p = NULL;
         p = realloc(d->arr_s, sizeof(set_t *)*(d->cap_s + 1));
@@ -190,16 +227,31 @@ int data_append_s(data_t *d, set_t *s)
         (d->cap_s)++;
     }
 
-    //priradim na nove misto dany uakzatel na mnozinu
+    //copy a pointer to set to data
     d->arr_s[d->length_s] = s;
     d->length_s++;
 
     return 1;
 }
 
-/* funkce pro rozsireni dat o novou relaci */
+/* function for adding a new relation to data */
 int data_append_r(data_t *d, rel_t *r)
 {
+    //if needed, allocate more memory
+    if (d->cap_r <= d->length_r) {
+        rel_t **p = NULL;
+        p = realloc(d->arr_r, sizeof(rel_t *)*(d->cap_r + 1));
+        if(p == NULL) {
+            memory_err();
+            return 0;
+        }
+        d->arr_r = p;
+        (d->cap_r)++;
+    }
+
+    //copy a pointer to relation to data
+    d->arr_r[d->length_r] = r;
+    d->length_r++;
 
     return 1;
 }
@@ -233,11 +285,11 @@ void set_destroy(set_t *s)
 /* funkce pro uvolneni pameti alokovane pro relaci */
 void rel_destroy(rel_t *r)
 {
-    /*if (s->elem_arr != NULL) {
-        free(s->elem_arr);
+    if (r->elem_arr != NULL) {
+        free(r->elem_arr);
     }
-    s->length = 0;
-    s->cap = 0;*/
+    r->length = 0;
+    r->cap = 0;
 }
 
 /* funkce pro uvolneni pameti alokovane pro data */
@@ -289,6 +341,8 @@ int check_char(char c)
     if ( (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ){
         return 1;
     }
+
+    fprintf(stderr, "Char '%c' is not supported\n", c);
     return 0;
 }
 
@@ -301,18 +355,28 @@ void str_append(char str[], char c, int *len)
     (*len)++;
 }
 
+/* function to skip all spaces, returns next char after spaces */
+char skip_space(FILE *fp)
+{
+    char c;
+
+    while ( (c = fgetc(fp)) == ' ') {
+        continue;
+    }
+
+    return c;
+}
+
 /* funkce pro nacteni stringu ze souboru */
 char load_str(FILE *fp, char str[], int *len)
 {
     //fce vraci pri uspechu znak, ktery bezprostredne nasleduje po danem retezci (mezera nebo \n)
+
     char c;
     *len = 0;  //delka daneho retezce ... potreba pro nacitani do univerza
     str[0] = '\0';
 
-    //preskoceni vsech mezer
-    while ( (c = fgetc(fp)) == ' ') {                                       ///skip_space()??
-        continue;
-    }
+    c = skip_space(fp);
 
     //konec radku odpovida konci dane mnoziny apod. => navrat
     if (c == '\n') {
@@ -322,7 +386,6 @@ char load_str(FILE *fp, char str[], int *len)
     do {
         //pokud c neni znak abecedy, vracim 0
         if (check_char(c) == 0){
-            fprintf(stderr, "Char %c is not supported\n", c);
             return 0;
         }
         str_append(str, c, len);      //prvni prubeh pouziva prvni znak po odstraneni mezer
@@ -380,85 +443,6 @@ int load_uni(FILE *fp, uni_t *u)
     return 1;
 }
 
-/* funkce pro zjisteni, zda se dany prvek vyskytuje v mnozine */
-int isin_set(set_t s,int elem)
-{
-    for (int i = 0; i < s.length; i++) {
-        if (s.elem_arr[i] == elem) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-/* funkce pro nacteni jednoho prvku do mnoziny */
-int elem_to_s(uni_t *u, set_t *s, char temp_s[], int line)
-{
-    bool found;
-    found = false;
-
-    for (int i = 0; i < u->length; i++) {
-        //kontrola, zda nalezi dany prvek univerzu
-        if (strcmp(temp_s, u->elem_arr[i]) == 0) {
-            //kontrola, zda uz dany prvek v mnozine neni
-            if (isin_set(*s, i) == 1) {
-                fprintf(stderr, "Element %s duplicate on line %d\n", temp_s, line);
-                return 0;
-            }
-
-            //kontrola, zda se povedlo prodlouzeni mnoziny
-            if (set_append(s, i) == 0) {
-                return 0;
-            }
-
-            //pokud retezec projde kontrolami, je korektni
-            found = true;
-            break;
-        }
-    }
-
-    if (!found && s->length != 0) {
-        fprintf(stderr, "Element %s not in universe (line %d)\n", temp_s, line);
-        return 0;
-    }
-
-    //jinak uspech
-    return 1;
-}
-
-/* funkce pro nacteni prvku radku do mnoziny */
-int load_set(FILE *fp, data_t *d, uni_t *u, int line)
-{
-    set_t *s = malloc(sizeof(set_t *));
-    char temp_s[ELEM_LEN];
-    char c;
-    int len;    //delka daneho retezce, vyuziva load_uni => potreba jako paramentr funkce load_str
-
-    set_create(s, line);
-
-    do {
-        c = load_str(fp, temp_s, &len);
-
-        //pokud funkce load_str vrati 0 (=chyba), vratime 0
-        if (c == 0){
-            return 0;
-        }
-
-        //nacteni prvku do mnoziny
-        if (elem_to_s(u, s, temp_s, line) == 0) {
-            return 0;
-        }
-
-    } while( c != '\n');
-
-    //pridani mnoziny do dat
-    if (data_append_s(d, s) == 0) {
-        return 0;
-    }
-    //jinak uspech
-    return 1;
-}
-
 /* funkce pro pridani univerza jako mnoziny */
 int u_to_s(uni_t *u, data_t *d, int line)
 {
@@ -478,9 +462,258 @@ int u_to_s(uni_t *u, data_t *d, int line)
     return 1;
 }
 
-/* funkce pro nacteni prvku radku do relace */ ///TODO prvek prave 1
-int load_rel(FILE *fp, uni_t *u)
+/* funkce pro zjisteni, zda se dany prvek vyskytuje v mnozine */
+int isin_set(set_t s,int elem)
 {
+    for (int i = 0; i < s.length; i++) {
+        if (s.elem_arr[i] == elem) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* function checking if string is in universe */
+int isin_uni(uni_t *u, char s[], int line)
+{
+    //returns -1 when no elem matches, to avoid conflict with index 0
+
+    for (int i = 0; i < u->length; i++) {
+        if (strcmp(s, u->elem_arr[i]) == 0) {
+            return i;
+        }
+    }
+
+    fprintf(stderr, "Element %s not in universe (line %d)\n", s, line);
+    return -1;
+}
+
+/* funkce pro nacteni jednoho prvku do mnoziny */
+int elem_to_s(uni_t *u, set_t *s, char temp_s[], int line)
+{
+    //kontrola, zda neni retezec prazdny - kvuli ukonceni radku
+    if (temp_s[0] == '\0') {
+        return 1;
+    }
+
+    int ind;  //index
+
+
+    if ((ind = isin_uni(u, temp_s, line)) == -1){
+        return 0;
+    }
+    if (isin_set(*s, ind) == 1) {
+        fprintf(stderr, "Element %s duplicate on line %d\n", temp_s, line);
+        return 0;
+    }
+
+    //kontrola, zda se povedlo prodlouzeni mnoziny
+    if (set_append(s, ind) == 0) {
+        return 0;
+    }
+
+    //jinak uspech
+    return 1;
+}
+
+/* function for loading all elements in a line to set */
+int load_set(FILE *fp, data_t *d, uni_t *u, int line)
+{
+    //allocation of set
+    set_t *s = malloc(sizeof(set_t *));
+    if (s == NULL) {
+        memory_err();
+        return 0;
+    }
+
+    char temp_s[ELEM_LEN];
+    char c;
+    int len;    //length of string, used by load_uni => needed as a parameter of load_str
+
+    //inicialization of set
+    set_create(s, line);
+
+    do {
+        c = load_str(fp, temp_s, &len);
+
+        //if load_str returns 0 (=error), return 0
+        if (c == 0){
+            return 0;
+        }
+
+        //load element to set
+        if (elem_to_s(u, s, temp_s, line) == 0) {
+            return 0;
+        }
+
+    } while( c != '\n');
+
+    //add set to data
+    if (data_append_s(d, s) == 0) {
+        return 0;
+    }
+    //else success
+    return 1;
+}
+
+/* function for loading the 2nd string of a relation */     ///TODO rozdelit
+char load_str_r(FILE *fp, char str1[], char str2[], int line)
+{
+    //when successful, function returns next character after pair (space or \n)
+    char c;
+    str1[0] = '\0';
+    str2[0] = '\0';
+    int len = 0;
+
+    c = skip_space(fp);
+
+    //return successfully if end of relation is loaded
+    if (c == '\n') {
+        return c;
+    }
+
+    if (c != '(') {
+        fprintf(stderr, "Invalid format of relation on line %d\n", line);
+        return 0;
+    }
+
+    c = fgetc(fp);       //get new character
+
+    do {
+
+        if ( c == '\n') {
+            fprintf(stderr, "Unfinished pair in relation on line %d\n", line);
+            return 0;
+        }
+        //if c is not letter of the alphabet, return 0
+        if (check_char(c) == 0){
+            return 0;
+        }
+
+        str_append(str1, c, &len);          //add character to string
+
+        if (len == ELEM_LEN - 1) {
+            fprintf(stderr, "Element (%s...) exceeds length of %d\n", str1, ELEM_LEN - 1);
+            return 0;
+        }
+    } while ((c = fgetc(fp)) != ' ');
+
+    if (len == 0) {
+        fprintf(stderr, "Invalid format of relation on line %d\n", line);
+        return 0;
+    }
+
+    len = 0;
+    c = skip_space(fp);
+
+    do {
+        if (check_char(c) == 0){
+            return 0;
+        }
+        str_append(str2, c, &len);      //add character to string
+
+        c = fgetc(fp);       //get new character
+
+        //
+        if ( c == '\n') {
+            fprintf(stderr, "Unfinished pair in relation on line %d\n", line);
+            return 0;
+        }
+        if ( c == ' ') {
+            fprintf(stderr, "Invalid format of relation on line %d\n", line);
+            return 0;
+        }
+
+        if (len == ELEM_LEN - 1) {
+            fprintf(stderr, "Element (%s...) exceeds length of %d\n", str1, ELEM_LEN - 1);
+            return 0;
+        }
+    } while (c != ')');
+
+    if (len == 0) {
+        fprintf(stderr, "Invalid format of relation on line %d\n", line);
+        return 0;
+    }
+
+    //success
+    return 1;
+}
+
+/* function checking if pair is in relation */
+int isin_rel(rel_t *r, elpair_t p)
+{
+    for (int i = 0; i < r->length; i++){
+        if ((p.e_1 == r->elem_arr[i].e_1) && (p.e_2 == r->elem_arr[i].e_2)){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* function for assigning pair to relation */
+int pair_to_r(uni_t *u, rel_t *r, char temp_s1[], char temp_s2[], int line)
+{
+    //checking if strings aren't empty because of '\n'
+    if (temp_s1[0] == '\0' && temp_s2[0] == '\0') {
+        return 1;
+    }
+    elpair_t p;
+
+    //is pair from universe?
+    p.e_1 = isin_uni(u, temp_s1, line);
+    p.e_2 = isin_uni(u, temp_s2, line);
+    if (p.e_1 == -1 || p.e_2 == -1) {
+        return 0;
+    }
+
+    //check, if pair is already in relation
+    if (isin_rel(r, p) == 1) {
+        fprintf(stderr, "Pair (%s %s) duplicate on line %d\n", temp_s1, temp_s2, line);
+        return 0;
+    }
+
+    //check, if appending the relation finished correctly
+    if (rel_append(r, p) == 0) {
+        return 0;
+    }
+
+    //else success
+    return 1;
+}
+
+/* function for loading all elements in a line to relation */ ///TODO prvek prave 1
+int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
+{
+    //allocation of relation
+    rel_t *r = malloc(sizeof(rel_t *));
+    if (r == NULL) {
+        memory_err();
+        return 0;
+    }
+    char temp_s1[ELEM_LEN];
+    char temp_s2[ELEM_LEN];
+    char c;
+
+    //inicialization of relation
+    rel_create(r, line);
+
+    do {
+        //check, if load_str() finished successfully
+        if ((c = load_str_r(fp, temp_s1, temp_s2, line)) == 0) {
+            return 0;
+        }
+
+        //load pair to relation
+        if ((pair_to_r(u, r, temp_s1, temp_s2, line)) == 0) {
+            return 0;
+        }
+    } while( c != '\n');
+
+    //add relation to data
+    if (data_append_r(d, r) == 0) {
+        return 0;
+    }
+    //else success
     return 1;
 }
 
@@ -526,7 +759,9 @@ int text_load(FILE *fp, data_t *d, uni_t *u)
                     fprintf(stderr, "Universe expected on line 1 instead of relation\n");
                     return 0;
                 }
-                load_rel(fp, u);
+                if (load_rel(fp, d, u, lines) == 0) {
+                    return 0;
+                }
                 continue;
 
             case 'C':
@@ -889,11 +1124,16 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    printf("Kontrola cteni ze souboru\n");
+    printf("=== Kontrola cteni ze souboru ===\n");
     uni_print(&uni);
     set_print(data.arr_s[0], &uni);
     set_print(data.arr_s[1], &uni);
-    printf("Kontrola cteni ze souboru\n\n");
+    set_print(data.arr_s[2], &uni);
+    rel_print(data.arr_r[0], &uni);
+    rel_print(data.arr_r[1], &uni);
+    printf("=== Kontrola cteni ze souboru ===\n\n");
+
+
 
 
     //uni_append(&uni, "Ahoj", 5);

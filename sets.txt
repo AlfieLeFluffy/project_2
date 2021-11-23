@@ -1,3 +1,5 @@
-U a b c x y z
-S a b c x
-S z
+U a adsda b c x y z 
+S a b c x adsda
+S 
+R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
+R 
