@@ -786,9 +786,6 @@ int text_load(FILE *fp, data_t *d, uni_t *u)
     return 1;
 }
 
-
-
-
 //find set defined on line [line]
 int set_line(data_t* data, int line)
 {
@@ -1174,9 +1171,9 @@ int main(int argc, char **argv)
     set_subset(&data, &uni, 3, 2);
     set_equals(&data, &uni, 2, 3);
 
-    //data_destroy(&data)
 
-    set_destroy(&set);
+
+    data_destroy(&data);
     uni_destroy(&uni);
 
     return EXIT_SUCCESS;
