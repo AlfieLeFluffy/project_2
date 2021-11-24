@@ -1107,10 +1107,10 @@ void set_equals(data_t* data, uni_t* u, int line_a, int line_b)
 void test_print(uni_t uni, data_t data){
     printf("=== Kontrola cteni ze souboru ===\n");
     uni_print(&uni);
-    for(int i=0;i!=data.length_s; i--){
+    for(int i=0;i<data.length_s; i++){
         set_print(data.arr_s[i], &uni);
     }
-    for(int i=0;i!=data.length_r; i--){
+    for(int i=0;i<data.length_r; i++){
         rel_print(data.arr_r[i], &uni);
     }
     printf("=== Kontrola cteni ze souboru ===\n\n");
