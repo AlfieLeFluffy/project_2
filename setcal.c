@@ -1137,8 +1137,48 @@ int rel_line(data_t* data, int line)
     return -1;
 }
 
+//returns the domain of relation with index [l]
+void rel_domainf(data_t* data, uni_t* uni, int l, bool* rel)
+{
+    bool rel_dom[uni->length];   //domain of relation with index [l]
+    for (int i = 0; i < uni->length; i++)
+    {
+        rel_dom[i] = false;
+    }
 
-//prints whether or not is the relation on line [line] reflexive, TO DO
+    //first elements from relation on line [line]
+    for (int i = 0; i < data->arr_r[l]->length; i++)
+    {
+        rel_dom[data->arr_r[l]->elem_arr[i].e_1] = true;
+    }
+
+    *rel = rel_dom;
+    return;
+}
+
+//returns the codomain of relation with index [l]
+void rel_codomainf(data_t* data, uni_t* uni, int l, bool* rel)
+{
+    bool rel_cod[uni->length];   //codomain of relation with index [l]
+    for (int i = 0; i < uni->length; i++)
+    {
+        rel_cod[i] = false;
+    }
+
+    //first elements from relation on line [line]
+    for (int i = 0; i < data->arr_r[l]->length; i++)
+    {
+        rel_cod[data->arr_r[l]->elem_arr[i].e_2] = true;
+    }
+
+    *rel = rel_cod;
+    return;
+}
+
+
+
+
+//prints whether or not is the relation on line [line] reflexive, ???
 void rel_reflexive(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1149,7 +1189,38 @@ void rel_reflexive(data_t* data, uni_t* uni, int line)
         return;
     }
 
-    //TO DO
+
+    bool* rel_dom;
+    rel_domainf(data, uni, l, rel_dom);
+
+    bool* rel_cod;
+    rel_codomainf(data, uni, l, rel_cod);
+
+    bool rel_ref[uni->length];   //reflexive elements in relation on line [line]
+    for (int i = 0; i < uni->length; i++)
+    {
+        rel_ref[i] = false;
+    }
+
+    for (int i = 0; i < data->arr_r[l]->length; i++)
+    {
+        if (data->arr_r[l]->elem_arr[i].e_1 == data->arr_r[l]->elem_arr[i].e_2)
+        {
+            rel_ref[data->arr_r[l]->elem_arr[i].e_1] = true;
+        }
+    }
+
+    for (int i = 0; i < uni->length; i++)
+    {
+        if ((rel_dom[i] || rel_cod) && !rel_ref[i])
+        {
+            fprintf(stdout, "false\n");
+            return;
+        }
+    }
+
+    fprintf(stdout, "true\n");
+    return;
 }
 
 //prints whether or not is the relation on line [line] symmetric, TO DO
@@ -1220,7 +1291,9 @@ void rel_domain(data_t* data, uni_t* uni, int line)
     }
 
 
-    bool rel_dom[uni->length];   //domain of relation on line [line]
+    bool* rel_dom;
+
+    /*bool rel_dom[uni->length];   //domain of relation on line [line]
     for (int i = 0; i < uni->length; i++)
     {
         rel_dom[i] = false;
@@ -1230,8 +1303,9 @@ void rel_domain(data_t* data, uni_t* uni, int line)
     for (int i = 0; i < data->arr_r[l]->length; i++)
     {
         rel_dom[data->arr_r[l]->elem_arr[i].e_1] = true;
-    }
+    }*/
 
+    rel_domainf(data, uni, l, rel_dom);
     bool_print(uni, rel_dom);
     return;
 }
@@ -1248,7 +1322,9 @@ void rel_codomain(data_t* data, uni_t* uni, int line)
     }
 
 
-    bool rel_cod[uni->length];   //codomain of relation on line [line]
+    bool* rel_cod;  //codomain of relation on line [line]
+
+    /*bool rel_cod[uni->length];   //codomain of relation on line [line]
     for (int i = 0; i < uni->length; i++)
     {
         rel_cod[i] = false;
@@ -1258,8 +1334,9 @@ void rel_codomain(data_t* data, uni_t* uni, int line)
     for (int i = 0; i < data->arr_r[l]->length; i++)
     {
         rel_cod[data->arr_r[l]->elem_arr[i].e_2] = true;
-    }
+    }*/
 
+    rel_codomainf(data, uni, l, rel_cod);
     bool_print(uni, rel_cod);
     return;
 }
@@ -1349,7 +1426,7 @@ int main(int argc, char **argv)
     set_subset(&data, &uni, 3, 2);
     set_equals(&data, &uni, 2, 3);
 
-    rel_reflexive(&data, &uni, 4);  //TO DO
+    rel_reflexive(&data, &uni, 4);  //???
     rel_symmetric(&data, &uni, 4);  //TO DO
     rel_antisymmetric(&data, &uni, 4);  //TO DO
     rel_transitive(&data, &uni, 4); //TO DO
