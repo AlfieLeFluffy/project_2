@@ -1104,6 +1104,18 @@ void set_equals(data_t* data, uni_t* u, int line_a, int line_b)
     return;
 }
 
+void test_print(uni_t uni, data_t data){
+    printf("=== Kontrola cteni ze souboru ===\n");
+    uni_print(&uni);
+    for(int i=0;i!=data.length_s; i--){
+        set_print(data.arr_s[i], &uni);
+    }
+    for(int i=0;i!=data.length_r; i--){
+        rel_print(data.arr_r[i], &uni);
+    }
+    printf("=== Kontrola cteni ze souboru ===\n\n");
+}
+
 
 int main(int argc, char **argv)
 {
@@ -1121,16 +1133,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    printf("=== Kontrola cteni ze souboru ===\n");
-    uni_print(&uni);
-    set_print(data.arr_s[0], &uni);
-    set_print(data.arr_s[1], &uni);
-    set_print(data.arr_s[2], &uni);
-    rel_print(data.arr_r[0], &uni);
-    rel_print(data.arr_r[1], &uni);
-    printf("=== Kontrola cteni ze souboru ===\n\n");
-
-
+    test_print(uni, data);
 
 
     //uni_append(&uni, "Ahoj", 5);
