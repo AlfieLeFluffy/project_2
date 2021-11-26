@@ -868,13 +868,6 @@ int text_load(char **argv, data_t *d, uni_t *u)     ///TODO commands; rozdelit c
                 continue;
 
             case 'R':
-                /*if (lines == 1) {
-                    fprintf(stderr, "Universe expected on line 1 instead of relation\n");
-                    return 0;
-                }
-                if (load_rel(fp, d, u, lines) == 0) {
-                    return 0;
-                }*/
                 if (caseRel(fp, u, d, lines) == 0){
                     return 0;
                 }
