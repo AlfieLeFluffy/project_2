@@ -575,26 +575,11 @@ int load_set(FILE *fp, data_t *d, uni_t *u, int line)
     return 1;
 }
 
-/* function for loading the 2nd string of a relation */     ///TODO rozdelit
-char load_str_r(FILE *fp, char str1[], char str2[], int line)
+/* function for loading the first element of a relation pair */
+int load_str_r_1(FILE *fp, char str1[], int line)
 {
-    //when successful, function returns next character after pair (space or \n)
-    char c;
-    str1[0] = '\0';
-    str2[0] = '\0';
     int len = 0;
-
-    c = skip_space(fp);
-
-    //return successfully if end of relation is loaded
-    if (c == '\n') {
-        return c;
-    }
-
-    if (c != '(') {
-        fprintf(stderr, "Invalid format of relation on line %d\n", line);
-        return 0;
-    }
+    char c;
 
     c = fgetc(fp);       //get new character
 
@@ -622,8 +607,15 @@ char load_str_r(FILE *fp, char str1[], char str2[], int line)
         return 0;
     }
 
-    len = 0;
-    c = skip_space(fp);
+    //else success
+    return 1;
+}
+
+/* function for loading the second element of a relation pair */
+int load_str_r_2(FILE *fp, char str2[], int line)
+{
+    int len = 0;
+    char c = skip_space(fp);
 
     do {
         if (check_char(c) == 0){
@@ -644,7 +636,7 @@ char load_str_r(FILE *fp, char str1[], char str2[], int line)
         }
 
         if (len == ELEM_LEN - 1) {
-            fprintf(stderr, "Element (%s...) exceeds length of %d\n", str1, ELEM_LEN - 1);
+            fprintf(stderr, "Element (%s...) exceeds length of %d\n", str2, ELEM_LEN - 1);
             return 0;
         }
     } while (c != ')');
@@ -654,7 +646,40 @@ char load_str_r(FILE *fp, char str1[], char str2[], int line)
         return 0;
     }
 
-    //success
+    //else success
+    return 1;
+}
+
+/* function for loading the 2nd string of a relation */
+char load_str_r(FILE *fp, char str1[], char str2[], int line)
+{
+    //when successful, function returns next character after pair (space or \n)
+    char c;
+    str1[0] = '\0';
+    str2[0] = '\0';
+
+
+    c = skip_space(fp);
+
+    //return successfully if end of relation is loaded
+    if (c == '\n') {
+        return c;
+    }
+
+    if (c != '(') {
+        fprintf(stderr, "Invalid format of relation on line %d\n", line);
+        return 0;
+    }
+
+    if (load_str_r_1(fp, str1, line) == 0){
+        return 0;
+    }
+
+    if (load_str_r_2(fp, str2, line) == 0){
+        return 0;
+    }
+
+    //success if both strings were loaded correctly
     return 1;
 }
 
@@ -742,6 +767,81 @@ int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
     return 1;
 }*/
 
+/*  */
+int is_space(FILE *fp, int lines)
+{
+    if (fgetc(fp) == ' '){
+        return 1;
+    }
+    fprintf(stderr, "Expected a space after identifying a line (line %d)\n", lines);
+    return 0;
+}
+
+
+/* function for loading and checking a line with a universe on it */
+int caseUni(FILE *fp, uni_t *u, data_t *d, int lines)
+{
+    if (is_space(fp, lines) == 0){
+        return 0;
+    }
+    //check if universe is on line 1
+    if (lines != 1) {
+        fprintf(stderr, "Universe on an unexpected line (line %d)\n", lines);
+        return 0;
+    }
+    //load universe from line
+    if (load_uni(fp, u) == 0){
+        return 0;
+    }
+    //load universe as a set into data
+    if (u_to_s(u, d, lines) == 0){
+        return 0;
+    }
+
+    //else success
+    return 1;
+}
+
+/* function for loading and checking a line with a set on it */
+int caseSet(FILE *fp, uni_t *u, data_t *d, int lines)
+{
+    if (is_space(fp, lines) == 0){
+        return 0;
+    }
+    //check if set is not on line 1
+    if (lines == 1) {
+        fprintf(stderr, "Universe expected on line 1 instead of set\n");
+        return 0;
+    }
+    //load set into data
+    if (load_set(fp, d, u, lines) == 0) {
+        return 0;
+    }
+
+    //else success
+    return 1;
+}
+
+/* function for loading and checking a line with a relation on it */
+int caseRel(FILE *fp, uni_t *u, data_t *d, int lines)
+{
+    if (is_space(fp, lines) == 0){
+        return 0;
+    }
+    //check if relation in not on line 1
+    if (lines == 1) {
+        fprintf(stderr, "Universe expected on line 1 instead of relation\n");
+        return 0;
+    }
+    //load relation into data
+    if (load_rel(fp, d, u, lines) == 0) {
+        return 0;
+    }
+
+    //else success
+    return 1;
+}
+
 /* function for opening file and loading its content */
 int text_load(char **argv, data_t *d, uni_t *u)     ///TODO commands; rozdelit case; >lines error??
 {
@@ -756,36 +856,26 @@ int text_load(char **argv, data_t *d, uni_t *u)     ///TODO commands; rozdelit c
         //check the type of line
         switch(fgetc(fp)) {
             case 'U':
-                if (lines != 1) {
-                    fprintf(stderr, "Universe on an unexpected line (line %d)\n", lines);
+                if (caseUni(fp, u, d, lines) == 0){
                     return 0;
                 }
-                if (load_uni(fp, u) == 0){
-                    return 0;
-                }
-                if (u_to_s(u, d, lines) == 0){
-                    return 0;
-                }
-
                 continue;
 
             case 'S':
-                if (lines == 1) {
-                    fprintf(stderr, "Universe expected on line 1 instead of set\n");
+                if (caseSet(fp, u, d, lines) == 0){
                     return 0;
                 }
-                if (load_set(fp, d, u, lines) == 0) {
-                    return 0;
-                }
-
                 continue;
 
             case 'R':
-                if (lines == 1) {
+                /*if (lines == 1) {
                     fprintf(stderr, "Universe expected on line 1 instead of relation\n");
                     return 0;
                 }
                 if (load_rel(fp, d, u, lines) == 0) {
+                    return 0;
+                }*/
+                if (caseRel(fp, u, d, lines) == 0){
                     return 0;
                 }
                 continue;
