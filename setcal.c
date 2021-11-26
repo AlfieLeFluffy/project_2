@@ -2,30 +2,32 @@
  *
  * setcal.c
  *
- * ver 0.2
+ * ver 0.3
  * =========================
  *
- * 23.11.2021
+ * 26.11.2021
  *
  *******************************/
 
-/** hlavickove soubory **/
+/** header files **/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
-/** definice konstant **/
-#define ELEM_LEN 31         //maximalni povolena delka retezce + 1
-#define LINES_MAX 1000      //max. podporovany pocet radku v souboru
+/** definitions of constants **/
+#define ELEM_LEN 31         //max. allowed length of strings + 1
+#define LINES_MAX 1000      //max. allowed number of lines in a file
 
-/** definice novych datovych typu **/
+/** definitions of new data types **/
+//universe
 typedef struct{
 	int length;
 	int cap;
 	char **elem_arr;
 } uni_t;
 
+//set
 typedef struct{
 	int line;
 	int length;
@@ -33,29 +35,37 @@ typedef struct{
 	int *elem_arr;
 } set_t;
 
+//element of relation
 typedef struct{
     int e_1;
     int e_2;
 } elpair_t;
 
+//relation
 typedef struct{
 	int line;
-	int length;         //pocet dvojic
+	int length;         //number of pairs
 	int cap;
 	elpair_t *elem_arr;
 } rel_t;
 
+//all sets and relations
 typedef struct{
-    set_t **arr_s;      //pole ukazatelu na vsechny mnoziny
+    set_t **arr_s;      //array of all set pointers
     int length_s;
     int cap_s;
-    rel_t **arr_r;      //pole ukazatelu na vsechny relace
+    rel_t **arr_r;      //array of all relation pointers
     int length_r;
     int cap_r;
 } data_t;
 
-/** definice globalnich funkci **/
-//funkce pri uspechu vraci 1, pri neuspechu 0
+/** definitions of functions **/
+//functions return 1 when successful and 0 when not
+
+
+/*
+    Memory and printing functions
+*/
 
 /* prints memory error */
 void memory_err()
@@ -63,39 +73,46 @@ void memory_err()
     fprintf(stderr, "Memory error\n");
 }
 
-/* funkce pro tisk univerza */
+/* function for printing universe */
 void uni_print(uni_t *u)
 {
-    printf("U ");
+    fprintf(stdout, "U ");
     for (int i = 0; i < u->length; i++) {
-        printf("%s ", u->elem_arr[i]);
+        fprintf(stdout, "%s ", u->elem_arr[i]);
     }
-    printf("\n");
+
+    fprintf(stdout, "                                     ***line: %d elements: %d***", 1 , u->length);        //DELETE LATER
+
+    fprintf(stdout, "\n");
 }
 
-/* function for printing a set */
+/* function for printing set */
 void set_print(set_t *s, uni_t *u)
 {
-	fprintf(stdout, "Set on line %d contains %d elements which are: ", s->line, s->length);
-
+	fprintf(stdout, "S ");
 	for(int i = 0; i < s->length; i++){
 		fprintf(stdout, "%s ", u->elem_arr[s->elem_arr[i]]);
 	}
+
+	fprintf(stdout, "                                     ***line: %d elements: %d***", s->line, s->length);        //DELETE LATER
+
 	fprintf(stdout, "\n");
 }
 
-/* function for printing a relation */
+/* function for printing relation */
 void rel_print(rel_t *r, uni_t *u)
 {
-    fprintf(stdout, "Relation on line %d contains %d elements which are: ", r->line, r->length);
-
+    fprintf(stdout, "R ");
 	for(int i = 0; i < r->length; i++){
 		fprintf(stdout, "(%s %s) ", u->elem_arr[r->elem_arr[i].e_1], u->elem_arr[r->elem_arr[i].e_2] );
 	}
+
+	fprintf(stdout, "                                     ***line: %d elements: %d***", r->line, r->length);        //DELETE LATER
+
 	fprintf(stdout, "\n");
 }
 
-/* funkce pro inicializaci univerza */
+/* function for universe initialization */
 void uni_create(uni_t *u)
 {
     u->length = 0;
@@ -103,7 +120,7 @@ void uni_create(uni_t *u)
     u->elem_arr = NULL;
 }
 
-/* funkce pro inicializaci mnoziny */
+/* function for set initialization */
 void set_create(set_t *s, int line)
 {
     s->line = line;
@@ -112,7 +129,7 @@ void set_create(set_t *s, int line)
     s->elem_arr = NULL;
 }
 
-/* funkce pro inicializaci relace */
+/* function for relation initialization */
 void rel_create(rel_t *r, int line)
 {
     r->line = line;
@@ -121,7 +138,7 @@ void rel_create(rel_t *r, int line)
     r->elem_arr = NULL;
 }
 
-/* funkce pro inicializaci poli mnozin a relaci */
+/* function for array of sets and array of relations initialization */
 void data_create(data_t *d)
 {
     d->arr_s = NULL;
@@ -132,15 +149,15 @@ void data_create(data_t *d)
     d->cap_r = 0;
 }
 
-/* funkce pro rozsireni univerza  o novy prvek*/
+/* function for adding a new element to universe */
 int uni_append(uni_t *u, char *elem, int str_len)
 {
-    //kontrola, zda neni retezec prazdny - kvuli konci radku
+    //check, if string isn't empty because of end of line
     if (str_len == 0) {
         return 1;
     }
 
-    //pokud je potreba, zvetsim pole ukazatelu na prvky univerza
+    //if needed, increase capacity of array of universe element pointers
     if (u->cap <= u->length) {
         char **p = NULL;
         p = realloc(u->elem_arr, sizeof(char *)*(u->cap + 1));
@@ -152,14 +169,14 @@ int uni_append(uni_t *u, char *elem, int str_len)
         u->cap++;
     }
 
-    //alokace mista pro dany prvek
+    //allocation of memory for new element
     u->elem_arr[u->length] = malloc((str_len+1) * sizeof(char));
     if( u->elem_arr[u->length] == NULL) {
         memory_err();
         return 0;
     }
 
-    //ulozim novy prvek
+    //copy new element to universe
     strcpy(u->elem_arr[u->length], elem);
 
     u->length++;
@@ -167,10 +184,10 @@ int uni_append(uni_t *u, char *elem, int str_len)
     return 1;
 }
 
-/* funkce pro rozsireni mnoziny o novy prvek */
-int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ??? **/
+/* function for adding a new element to set */
+int set_append(set_t *s, int elem)
 {
-    //pokud je potreba, zvetsim mnozinu
+    //if needed, increase set's capacity
     if (s->cap <= s->length) {
         int *p = NULL;
         p = realloc(s->elem_arr, sizeof(int)*(s->cap + 1));
@@ -182,14 +199,14 @@ int set_append(set_t *s, int elem)      /** unsigned int ???, vraceni pointeru ?
         s->cap++;
     }
 
-    //priradim na nove misto dany prvek
+    //copy new element to set
     s->elem_arr[s->length] = elem;
     s->length++;
 
     return 1;
 }
 
-/* function for adding new pair to relation */
+/* function for adding a new pair to relation */
 int rel_append(rel_t *r, elpair_t pair)
 {
     //if needed, increase relation's capacity
@@ -256,7 +273,7 @@ int data_append_r(data_t *d, rel_t *r)
     return 1;
 }
 
-/* funkce pro uvolneni pameti alokovane pro univerzum */
+/* function for deallocating memory used by universe */
 void uni_destroy(uni_t *u)
 {
     for (int i = 0; i < u->cap ; i++) {
@@ -272,7 +289,7 @@ void uni_destroy(uni_t *u)
     u->cap = 0;
 }
 
-/* funkce pro uvolneni pameti alokovane pro mnozinu */
+/* function for deallocating memory used by set */
 void set_destroy(set_t *s)
 {
     if (s->elem_arr != NULL) {
@@ -282,7 +299,7 @@ void set_destroy(set_t *s)
     s->cap = 0;
 }
 
-/* funkce pro uvolneni pameti alokovane pro relaci */
+/* function for deallocating memory used by relation */
 void rel_destroy(rel_t *r)
 {
     if (r->elem_arr != NULL) {
@@ -292,10 +309,10 @@ void rel_destroy(rel_t *r)
     r->cap = 0;
 }
 
-/* funkce pro uvolneni pameti alokovane pro data */
+/* function for deallocating memory used by data */
 void data_destroy(data_t *d)
 {
-    //dealokace mnozin
+    //deallocation of memory used by sets
     if (d->arr_s != NULL) {
         for (int i = 0; i < d->cap_s; i++) {
             set_destroy(d->arr_s[i]);
@@ -305,7 +322,7 @@ void data_destroy(data_t *d)
         free(d->arr_s);
     }
 
-    //dealokace relaci
+    //deallocation of memory used by relations
     if (d->arr_r != NULL) {
         for (int i = 0; i < d->cap_r; i++) {
             rel_destroy(d->arr_r[i]);
@@ -316,7 +333,12 @@ void data_destroy(data_t *d)
     }
 }
 
-/* funkce pro kontrolu vlozeneho parametru*/
+
+/*
+    Functions for loading file content
+*/
+
+/* function for checking the number of program's parameters */
 int check_param(int argc)
 {
     if (argc != 2){
@@ -326,18 +348,7 @@ int check_param(int argc)
     return 1;
 }
 
-/* funkce pro otevreni souboru */
-/*FILE *file_open(char **argv)                     //neni potreba nejspis, usetrila by tak jeden radek v text_load()
-{
-    FILE *fp = fopen(argv[1], "r");
-    if (fp == NULL){
-        fprintf(stderr, "Unable to open file\n");
-        return NULL;
-    }
-    return fp;
-}*/
-
-/* funkce pro kontrolu, zda je znak podporovan */
+/* function for checking if a character is supported */
 int check_char(char c)
 {
     if ( (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ){
@@ -348,10 +359,10 @@ int check_char(char c)
     return 0;
 }
 
-/* prodlouzi dany string o 1 znak */
+/* appends string by one character */
 void str_append(char str[], char c, int *len)
 {
-    //len je delka retezce, tedy udava pozici '\0'
+    //len equals to the position of '\0'
     str[*len] = c;
     str[*len + 1] = '\0';
     (*len)++;
@@ -369,46 +380,46 @@ char skip_space(FILE *fp)
     return c;
 }
 
-/* funkce pro nacteni stringu ze souboru */
+/* function for loading a string from file */
 char load_str(FILE *fp, char str[], int *len)
 {
-    //fce vraci pri uspechu znak, ktery bezprostredne nasleduje po danem retezci (mezera nebo \n)
+    //when successful, function returns the character immediately after the loaded string (space or '\n')
 
     char c;
-    *len = 0;  //delka daneho retezce ... potreba pro nacitani do univerza
+    *len = 0;  //length of loaded string ... needed for loading to universe
     str[0] = '\0';
 
     c = skip_space(fp);
 
-    //konec radku odpovida konci dane mnoziny apod. => navrat
+    //end of line equals to end of the set etc. => return
     if (c == '\n') {
         return c;
     }
 
     do {
-        //pokud c neni znak abecedy, vracim 0
+        //if c isn't a letter of the alphabet, return 0
         if (check_char(c) == 0){
             return 0;
         }
-        str_append(str, c, len);      //prvni prubeh pouziva prvni znak po odstraneni mezer
+        str_append(str, c, len);      //first iteration uses a first character after removing all spaces
 
-        c = fgetc(fp);       //ziskani noveho znaku
+        c = fgetc(fp);       //get the next character
 
-        //kontrola konce retezce
+        //end of string check
         if ( c == ' ' || c == '\n') {
             return c;
         }
     } while (*len < ELEM_LEN - 1);
 
-    //odchod mimo while pouze pokud dojde k prekroceni max. delky prvku
+    //leaving while loop is possible only when max. supported length of element is exceeded
     fprintf(stderr, "Element (%s...) exceeds length of %d\n", str, ELEM_LEN - 1);
     return 0;
 }
 
-/* funkce pro nacteni prvku radku do univerza */ ///TODO is_keyword(char str[])
+/* function for loading a line as universe */ ///TODO is_keyword(char str[])
 int load_uni(FILE *fp, uni_t *u)
 {
-    //inicializuji univerzum
+    //initialize universe
     uni_create(u);
 
     char temp_s[ELEM_LEN];
@@ -416,18 +427,19 @@ int load_uni(FILE *fp, uni_t *u)
     int len;
 
     do {
-        //abychom mohli kontrolovat jak '\n' tak 0, musime si
-        //navratovou hodnotu funkce load_str ulozit do promenne c
+        //to check '\n' and 0 separately, we need to save the
+        //return value of 'load_str'
+
         c = load_str(fp, temp_s, &len);
 
-        //pokud funkce load_str vrati 0 (=chyba), vratime 0
+        //if 'load_str' returns 0 => error
         if (c == 0){
             return 0;
         }
 
         ///is_keyword(temp_s);
 
-        //kontrola, zda uz neni prvek v univerzu
+        //check if element isn't already in universe
         for (int i = 0; i < u->length; i++) {
             if (strcmp(temp_s, u->elem_arr[i]) == 0) {
                 fprintf(stderr, "Element %s duplicate in universe\n", temp_s);
@@ -435,17 +447,17 @@ int load_uni(FILE *fp, uni_t *u)
             }
         }
 
-        //prodlouzime univerzum o nove nacteny string a opakujeme
+        //append universe by the loaded string and repeat
         if (uni_append(u, temp_s, len) == 0) {
             return 0;
         }
-    } while (c != '\n'); //pokud c je \n, jsme na konci radku -> konec nacitani
+    } while (c != '\n'); //if c is '\n' the end of line is reached => end load
 
-    //jinak uspech
+    //else success
     return 1;
 }
 
-/* funkce pro pridani univerza jako mnoziny */
+/* function for adding universe as set to data */
 int u_to_s(uni_t *u, data_t *d, int line)
 {
     set_t *s = malloc(sizeof(set_t));
@@ -455,12 +467,13 @@ int u_to_s(uni_t *u, data_t *d, int line)
     }
     set_create(s, line);
     for (int i = 0; i < u->length; i++){
-        //naplnime mnozinu vsemi indexy univerza
+        //fill set with all universe's indexes
         if (set_append(s, i) == 0){
             return 0;
         }
     }
-    //ulozime mnozinu do seznamu
+
+    //copy set pointer to array
     if (data_append_s(d, s) == 0){
             return 0;
     }
@@ -468,7 +481,7 @@ int u_to_s(uni_t *u, data_t *d, int line)
     return 1;
 }
 
-/* funkce pro zjisteni, zda se dany prvek vyskytuje v mnozine */
+/* function for finding out if element already is in set */
 int isin_set(set_t s,int elem)
 {
     for (int i = 0; i < s.length; i++) {
@@ -482,7 +495,7 @@ int isin_set(set_t s,int elem)
 /* function checking if string is in universe */
 int isin_uni(uni_t *u, char s[], int line)
 {
-    //returns -1 when no elem matches, to avoid conflict with index 0
+    //returns -1 when no element matches, to avoid conflict with index 0
 
     for (int i = 0; i < u->length; i++) {
         if (strcmp(s, u->elem_arr[i]) == 0) {
@@ -494,10 +507,10 @@ int isin_uni(uni_t *u, char s[], int line)
     return -1;
 }
 
-/* funkce pro nacteni jednoho prvku do mnoziny */
+/* function for loading one element to set */
 int elem_to_s(uni_t *u, set_t *s, char temp_s[], int line)
 {
-    //kontrola, zda neni retezec prazdny - kvuli ukonceni radku
+    //check if string isn't empty because of end of line
     if (temp_s[0] == '\0') {
         return 1;
     }
@@ -513,12 +526,12 @@ int elem_to_s(uni_t *u, set_t *s, char temp_s[], int line)
         return 0;
     }
 
-    //kontrola, zda se povedlo prodlouzeni mnoziny
+    //check if appending set was successful
     if (set_append(s, ind) == 0) {
         return 0;
     }
 
-    //jinak uspech
+    //else success
     return 1;
 }
 
@@ -723,22 +736,24 @@ int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
     return 1;
 }
 
-/* funkce pro nacteni prikazu ze souboru */
+/* function for loading command from file */
 /*int load_com(FILE *fp, uni_t *u)
 {
     return 1;
 }*/
 
-int text_load(char **argv, data_t *d, uni_t *u)
+/* function for opening file and loading its content */
+int text_load(char **argv, data_t *d, uni_t *u)     ///TODO commands; rozdelit case; >lines error??
 {
     FILE *fp = fopen(argv[1], "r");
     if (fp == NULL){
         fprintf(stderr, "Unable to open file\n");
         return 0;
     }
-    //cti soubor po radcich
+
+    //read file by lines
     for (int lines = 1; lines <= LINES_MAX; lines++) {
-        //zjistim, o jaky typ radku se jedna
+        //check the type of line
         switch(fgetc(fp)) {
             case 'U':
                 if (lines != 1) {
@@ -793,16 +808,14 @@ int text_load(char **argv, data_t *d, uni_t *u)
         }
     }
 
-    /*if (lines > LINES_MAX){ ??? } */
+    ///if (lines > LINES_MAX){ ??? }
 
     fclose(fp);
     return 0;
 }
 
 
-
-
-//prints chosen universe elements
+/* prints chosen universe elements */
 void bool_print(uni_t* u, bool* b)
 {
     fprintf(stdout, "S ");
@@ -826,7 +839,7 @@ void bool_print(uni_t* u, bool* b)
 */
 
 
-//find set defined on line [line]
+/* find set defined on line [line] */
 int set_line(data_t* data, int line)
 {
     for (int i = 0; i < data->length_s && i < line; i++)
@@ -843,7 +856,7 @@ int set_line(data_t* data, int line)
     return -1;
 }
 
-//returns whether or not is set on line [line_a] a subset of set on line [line_b]
+/* returns whether or not is set on line [line_a] a subset of set on line [line_b] */
 bool set_sub(data_t* data, uni_t* u, int l_a, int l_b)
 {
     bool set_b[u->length];   //elements of set on line [line_b]
@@ -872,7 +885,7 @@ bool set_sub(data_t* data, uni_t* u, int l_a, int l_b)
 }
 
 
-//prints whether or not is set on line [line] empty
+/* prints whether or not is set on line [line] empty  */
 void set_empty(data_t* data, int line)
 {
     int l = set_line(data, line);  //index of set on line [line]
@@ -896,7 +909,7 @@ void set_empty(data_t* data, int line)
     return;
 }
 
-//prints number of elements in set on line [line]
+/* prints number of elements in set on line [line] */
 void set_card(data_t* data, int line)
 {
     int l = set_line(data, line);  //index of set on line [line]
@@ -912,7 +925,7 @@ void set_card(data_t* data, int line)
     return;
 }
 
-//prints complement of set on line [line]
+/* prints complement of set on line [line] */
 void set_complement(data_t* data, uni_t* uni, int line)
 {
     int l = set_line(data, line);  //index of set on line [line]
@@ -940,7 +953,7 @@ void set_complement(data_t* data, uni_t* uni, int line)
     return;
 }
 
-//prints union of sets on lines [line_a] and [line_b]
+/* prints union of sets on lines [line_a] and [line_b]  */
 void set_union(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
@@ -976,7 +989,7 @@ void set_union(data_t* data, uni_t* uni, int line_a, int line_b)
     return;
 }
 
-//prints intersect of sets on lines [line_a] and [line_b]
+/* prints intersect of sets on lines [line_a] and [line_b] */
 void set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
@@ -1013,7 +1026,7 @@ void set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
     return;
 }
 
-//prints set on line [line_a] minus set on line [line_b]
+/* prints set on line [line_a] minus set on line [line_b]  */
 void set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
@@ -1048,7 +1061,7 @@ void set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
     return;
 }
 
-//prints whether or not is set on line [line_a] a subset of set on line [line_b]
+/* prints whether or not is set on line [line_a] a subset of set on line [line_b] */
 void set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
@@ -1073,7 +1086,7 @@ void set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
     return;
 }
 
-//prints whether or not is set on line [line_a] a proper subset of set on line [line_b]
+/* prints whether or not is set on line [line_a] a proper subset of set on line [line_b] */
 void set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
@@ -1100,7 +1113,7 @@ void set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
     return;
 }
 
-//prints whether or not are sets on lines [line_a] and [line_b] equal
+/* prints whether or not are sets on lines [line_a] and [line_b] equal */
 void set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
@@ -1133,7 +1146,7 @@ void set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
 */
 
 
-//find relation defined on line [line]
+/* find relation defined on line [line] */
 int rel_line(data_t* data, int line)
 {
     for (int i = 0; i < data->length_r && i < line; i++)
@@ -1150,7 +1163,7 @@ int rel_line(data_t* data, int line)
     return -1;
 }
 
-//returns the domain of relation with index [l]
+/* returns the domain of relation with index [l] */
 void rel_domainf(data_t* data, uni_t* uni, int l, bool* rel)
 {
     bool rel_dom[uni->length];   //domain of relation with index [l]
@@ -1169,7 +1182,7 @@ void rel_domainf(data_t* data, uni_t* uni, int l, bool* rel)
     return;
 }
 
-//returns the codomain of relation with index [l]
+/* returns the codomain of relation with index [l] */
 void rel_codomainf(data_t* data, uni_t* uni, int l, bool* rel)
 {
     bool rel_cod[uni->length];   //codomain of relation with index [l]
@@ -1191,7 +1204,7 @@ void rel_codomainf(data_t* data, uni_t* uni, int l, bool* rel)
 
 
 
-//prints whether or not is the relation on line [line] reflexive, ???
+/* prints whether or not is the relation on line [line] reflexive, ??? */
 void rel_reflexive(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1236,7 +1249,7 @@ void rel_reflexive(data_t* data, uni_t* uni, int line)
     return;
 }
 
-//prints whether or not is the relation on line [line] symmetric, TO DO
+/* prints whether or not is the relation on line [line] symmetric, TO DO */
 void rel_symmetric(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1250,7 +1263,7 @@ void rel_symmetric(data_t* data, uni_t* uni, int line)
     //TO DO
 }
 
-//prints whether or not is the relation on line [line] antisymmetric, TO DO
+/* prints whether or not is the relation on line [line] antisymmetric, TO DO */
 void rel_antisymmetric(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1264,7 +1277,7 @@ void rel_antisymmetric(data_t* data, uni_t* uni, int line)
     //TO DO
 }
 
-//prints whether or not is the relation on line [line] transitive, TO DO
+/* prints whether or not is the relation on line [line] transitive, TO DO */
 void rel_transitive(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1278,7 +1291,7 @@ void rel_transitive(data_t* data, uni_t* uni, int line)
     //TO DO
 }
 
-//prints whether or not is the relation on line [line] a function, TO DO
+/* prints whether or not is the relation on line [line] a function, TO DO */
 void rel_function(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1292,7 +1305,7 @@ void rel_function(data_t* data, uni_t* uni, int line)
     //TO DO
 }
 
-//prints the domain of the function on line [line]
+/* prints the domain of the function on line [line] */
 void rel_domain(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1323,7 +1336,7 @@ void rel_domain(data_t* data, uni_t* uni, int line)
     return;
 }
 
-//prints the codomain of the function on line [line]
+/* prints the codomain of the function on line [line] */
 void rel_codomain(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1354,7 +1367,7 @@ void rel_codomain(data_t* data, uni_t* uni, int line)
     return;
 }
 
-//prints whether or not is the relation on line [line] injective, TO DO
+/* prints whether or not is the relation on line [line] injective, TO DO */
 void rel_injective(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1368,7 +1381,7 @@ void rel_injective(data_t* data, uni_t* uni, int line)
     //TO DO
 }
 
-//prints whether or not is the relation on line [line] surjective, TO DO
+/* prints whether or not is the relation on line [line] surjective, TO DO */
 void rel_surjective(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1382,7 +1395,7 @@ void rel_surjective(data_t* data, uni_t* uni, int line)
     //TO DO
 }
 
-//prints whether or not is the relation on line [line] bijective, TO DO
+/* prints whether or not is the relation on line [line] bijective, TO DO */
 void rel_bijective(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1396,7 +1409,7 @@ void rel_bijective(data_t* data, uni_t* uni, int line)
     //TO DO
 }
 
-
+///DELETE LATER
 void test_print(uni_t uni, data_t data)
 {
     printf("=== Kontrola cteni ze souboru ===\n");
@@ -1413,6 +1426,7 @@ void test_print(uni_t uni, data_t data)
 
 int main(int argc, char **argv)
 {
+    //check program parameters
     if(check_param(argc) == 0){
         return EXIT_FAILURE;
     }
@@ -1422,10 +1436,12 @@ int main(int argc, char **argv)
 
     data_create(&data);
 
+    //open file and load its content
     if (text_load(argv,&data, &uni) == 0) {
         return EXIT_FAILURE;
     }
 
+    ///TEST
     test_print(uni, data);
 
 
@@ -1453,7 +1469,9 @@ int main(int argc, char **argv)
     rel_bijective(&data, &uni, 4);  //TO DO
 */
 
+    ///TEST KONEC
 
+    //memory deallocation
     data_destroy(&data);
     uni_destroy(&uni);
 
