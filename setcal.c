@@ -296,9 +296,8 @@ void rel_destroy(rel_t *r)
 void data_destroy(data_t *d)
 {
     //dealokace mnozin
-
     if (d->arr_s != NULL) {
-        for (int i; i < d->cap_s; i++) {        //conditional jump move based on uninitialized valuse
+        for (int i = 0; i < d->cap_s; i++) {
             set_destroy(d->arr_s[i]);
             free(d->arr_s[i]);
         }
@@ -308,7 +307,7 @@ void data_destroy(data_t *d)
 
     //dealokace relaci
     if (d->arr_r != NULL) {
-        for (int i; i < d->cap_r; i++) {        //conditional jump move based on uninitialized valuse
+        for (int i = 0; i < d->cap_r; i++) {
             rel_destroy(d->arr_r[i]);
             free(d->arr_r[i]);
         }
