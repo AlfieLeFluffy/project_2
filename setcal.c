@@ -296,9 +296,11 @@ void rel_destroy(rel_t *r)
 void data_destroy(data_t *d)
 {
     //dealokace mnozin
+
     if (d->arr_s != NULL) {
-        for (int i; i < d->cap_s; i++) {
+        for (int i; i < d->cap_s; i++) {        //conditional jump move based on uninitialized valuse
             set_destroy(d->arr_s[i]);
+            free(d->arr_s[i]);
         }
 
         free(d->arr_s);
@@ -306,8 +308,9 @@ void data_destroy(data_t *d)
 
     //dealokace relaci
     if (d->arr_r != NULL) {
-        for (int i; i < d->cap_r; i++) {
+        for (int i; i < d->cap_r; i++) {        //conditional jump move based on uninitialized valuse
             rel_destroy(d->arr_r[i]);
+            free(d->arr_r[i]);
         }
 
         free(d->arr_r);
@@ -315,25 +318,25 @@ void data_destroy(data_t *d)
 }
 
 /* funkce pro kontrolu vlozeneho parametru*/
-int check_param(int argc, char **argv)
+int check_param(int argc)
 {
     if (argc != 2){
         fprintf(stderr, "Invalid number of args\n");
-        return 0;
-    }
-    if (fopen(argv[1],"r") == NULL){
-        fprintf(stderr, "Unable to open file\n");
         return 0;
     }
     return 1;
 }
 
 /* funkce pro otevreni souboru */
-FILE *file_open(char **argv)                      ///TODO zavrit soubor fp
+/*FILE *file_open(char **argv)                     //neni potreba nejspis, usetrila by tak jeden radek v text_load()
 {
     FILE *fp = fopen(argv[1], "r");
+    if (fp == NULL){
+        fprintf(stderr, "Unable to open file\n");
+        return NULL;
+    }
     return fp;
-}
+}*/
 
 /* funkce pro kontrolu, zda je znak podporovan */
 int check_char(char c)
@@ -447,6 +450,10 @@ int load_uni(FILE *fp, uni_t *u)
 int u_to_s(uni_t *u, data_t *d, int line)
 {
     set_t *s = malloc(sizeof(set_t));
+    if (s == NULL) {
+        memory_err();
+        return 0;
+    }
     set_create(s, line);
     for (int i = 0; i < u->length; i++){
         //naplnime mnozinu vsemi indexy univerza
@@ -723,8 +730,13 @@ int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
     return 1;
 }*/
 
-int text_load(FILE *fp, data_t *d, uni_t *u)
+int text_load(char **argv, data_t *d, uni_t *u)
 {
+    FILE *fp = fopen(argv[1], "r");
+    if (fp == NULL){
+        fprintf(stderr, "Unable to open file\n");
+        return 0;
+    }
     //cti soubor po radcich
     for (int lines = 1; lines <= LINES_MAX; lines++) {
         //zjistim, o jaky typ radku se jedna
@@ -773,6 +785,7 @@ int text_load(FILE *fp, data_t *d, uni_t *u)
                 continue;
 
             case EOF:
+                fclose(fp);
                 return 1;
 
             default:
@@ -783,7 +796,8 @@ int text_load(FILE *fp, data_t *d, uni_t *u)
 
     /*if (lines > LINES_MAX){ ??? } */
 
-    return 1;
+    fclose(fp);
+    return 0;
 }
 
 
@@ -1400,7 +1414,7 @@ void test_print(uni_t uni, data_t data)
 
 int main(int argc, char **argv)
 {
-    if(check_param(argc, argv) == 0){
+    if(check_param(argc) == 0){
         return EXIT_FAILURE;
     }
 
@@ -1409,7 +1423,7 @@ int main(int argc, char **argv)
 
     data_create(&data);
 
-    if (text_load(file_open(argv), &data, &uni) == 0) {
+    if (text_load(argv,&data, &uni) == 0) {
         return EXIT_FAILURE;
     }
 
@@ -1439,6 +1453,7 @@ int main(int argc, char **argv)
     rel_surjective(&data, &uni, 4); //TO DO
     rel_bijective(&data, &uni, 4);  //TO DO
 */
+
 
     data_destroy(&data);
     uni_destroy(&uni);
