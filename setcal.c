@@ -446,7 +446,7 @@ int load_uni(FILE *fp, uni_t *u)
 /* funkce pro pridani univerza jako mnoziny */
 int u_to_s(uni_t *u, data_t *d, int line)
 {
-    set_t *s = malloc(sizeof(set_t *));
+    set_t *s = malloc(sizeof(set_t));
     set_create(s, line);
     for (int i = 0; i < u->length; i++){
         //naplnime mnozinu vsemi indexy univerza
@@ -520,7 +520,7 @@ int elem_to_s(uni_t *u, set_t *s, char temp_s[], int line)
 int load_set(FILE *fp, data_t *d, uni_t *u, int line)
 {
     //allocation of set
-    set_t *s = malloc(sizeof(set_t *));
+    set_t *s = malloc(sizeof(set_t));
     if (s == NULL) {
         memory_err();
         return 0;
@@ -685,7 +685,7 @@ int pair_to_r(uni_t *u, rel_t *r, char temp_s1[], char temp_s2[], int line)
 int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
 {
     //allocation of relation
-    rel_t *r = malloc(sizeof(rel_t *));
+    rel_t *r = malloc(sizeof(rel_t));
     if (r == NULL) {
         memory_err();
         return 0;
@@ -1426,6 +1426,8 @@ int main(int argc, char **argv)
     set_subset(&data, &uni, 3, 2);
     set_equals(&data, &uni, 2, 3);
 
+
+/*
     rel_reflexive(&data, &uni, 4);  //???
     rel_symmetric(&data, &uni, 4);  //TO DO
     rel_antisymmetric(&data, &uni, 4);  //TO DO
@@ -1436,7 +1438,7 @@ int main(int argc, char **argv)
     rel_injective(&data, &uni, 4);  //TO DO
     rel_surjective(&data, &uni, 4); //TO DO
     rel_bijective(&data, &uni, 4);  //TO DO
-
+*/
 
     data_destroy(&data);
     uni_destroy(&uni);
