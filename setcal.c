@@ -333,6 +333,12 @@ void data_destroy(data_t *d)
     }
 }
 
+/* deallocates all allocated memory */
+void destroy_all(data_t *d, uni_t *u)
+{
+    uni_destroy(u);
+    data_destroy(d);
+}
 
 /*
     Functions for loading file content
@@ -725,7 +731,7 @@ int pair_to_r(uni_t *u, rel_t *r, char temp_s1[], char temp_s2[], int line)
     return 1;
 }
 
-/* function for loading all elements in a line to relation */ ///TODO prvek prave 1
+/* function for loading all elements in a line to relation */
 int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
 {
     //allocation of relation
@@ -842,17 +848,11 @@ int caseRel(FILE *fp, uni_t *u, data_t *d, int lines)
     return 1;
 }
 
-/* function for opening file and loading its content */
-int text_load(char **argv, data_t *d, uni_t *u)     ///TODO commands; rozdelit case; >lines error??
+/* function for loading setcal-formatted text from a file */
+int text_load(FILE *fp, data_t *d, uni_t *u)     ///TODO commands
 {
-    FILE *fp = fopen(argv[1], "r");
-    if (fp == NULL){
-        fprintf(stderr, "Unable to open file\n");
-        return 0;
-    }
-
     //read file by lines
-    for (int lines = 1; lines <= LINES_MAX; lines++) {
+    for (int lines = 1; lines <= LINES_MAX + 1; lines++) {
         //check the type of line
         switch(fgetc(fp)) {
             case 'U':
@@ -882,7 +882,6 @@ int text_load(char **argv, data_t *d, uni_t *u)     ///TODO commands; rozdelit c
                 continue;
 
             case EOF:
-                fclose(fp);
                 return 1;
 
             default:
@@ -890,13 +889,27 @@ int text_load(char **argv, data_t *d, uni_t *u)     ///TODO commands; rozdelit c
                 return 0;
         }
     }
-
-    ///if (lines > LINES_MAX){ ??? }
-
-    fclose(fp);
+    fprintf(stderr, "Number of lines exceeds %d\n", LINES_MAX);
     return 0;
 }
 
+/* function for opening a file and loading its content */
+int file_load(char **argv, data_t *d, uni_t *u)
+{
+    FILE *fp = fopen(argv[1], "r");
+    if (fp == NULL){
+        fprintf(stderr, "Unable to open file\n");
+        return 0;
+    }
+
+    if (text_load(fp, d, u) == 0){
+        fclose(fp);
+        destroy_all(d, u);
+        return 0;
+    }
+    fclose(fp);
+    return 1;
+}
 
 /* prints chosen universe elements */
 void bool_print(uni_t* u, bool* b)
@@ -1520,7 +1533,7 @@ int main(int argc, char **argv)
     data_create(&data);
 
     //open file and load its content
-    if (text_load(argv,&data, &uni) == 0) {
+    if (file_load(argv, &data, &uni) == 0) {
         return EXIT_FAILURE;
     }
 
@@ -1555,8 +1568,7 @@ int main(int argc, char **argv)
     ///TEST KONEC
 
     //memory deallocation
-    data_destroy(&data);
-    uni_destroy(&uni);
+    destroy_all(&data, &uni);
 
     return EXIT_SUCCESS;
 }
