@@ -922,29 +922,38 @@ int file_load(char **argv, data_t *d, uni_t *u)
     return 1;
 }
 
+
+
 /* prints chosen universe elements */
-void bool_print(uni_t* u, bool* b)
+void bool_print(uni_t* uni, bool* b)
 {
     fprintf(stdout, "S ");
-
-    for (int i = 0; i < u->length; i++)
+    for (int i = 0; i < uni->length; i++)
     {
         if (b[i])
         {
-            fprintf(stdout, "%s ", u->elem_arr[i]);
+            fprintf(stdout, "%s ", uni->elem_arr[i]);
         }
     }
-
     fprintf(stdout, "\n");
 
     return;
 }
 
+/* resets bool array */
+void bool_reset(uni_t* uni, bool* arr, bool b)
+{
+    for (int i = 0; i < uni->length; i++)
+    {
+        arr[i] = b;
+    }
+
+    return;
+}
 
 /*
     Commands for sets
 */
-
 
 /* find set defined on line [line] */
 int set_line(data_t* data, int line)
@@ -964,13 +973,10 @@ int set_line(data_t* data, int line)
 }
 
 /* returns whether or not is set on line [line_a] a subset of set on line [line_b] */
-bool set_sub(data_t* data, uni_t* u, int l_a, int l_b)
+bool set_sub(data_t* data, uni_t* uni, int l_a, int l_b)
 {
-    bool set_b[u->length];   //elements of set on line [line_b]
-    for (int i = 0; i < u->length; i++)
-    {
-        set_b[i] = false;
-    }
+    bool set_b[uni->length];   //elements of set on line [line_b]
+    bool_reset(uni, set_b, false);
 
     for (int i = 0; i < data->arr_s[l_b]->length; i++)
     {
@@ -1045,10 +1051,7 @@ void set_complement(data_t* data, uni_t* uni, int line)
 
 
     bool set_comp[uni->length];   //complement of set on line [line]
-    for (int i = 0; i < uni->length; i++)
-    {
-        set_comp[i] = true;
-    }
+    bool_reset(uni, set_comp, true);
 
     //elements contained in set on line [line_a]
     for (int i = 0; i < data->arr_s[l]->length; i++)
@@ -1074,10 +1077,7 @@ void set_union(data_t* data, uni_t* uni, int line_a, int line_b)
 
 
     bool set_uni[uni->length];   //union of sets on lines [line_a] and [line_b]
-    for (int i = 0; i < uni->length; i++)
-    {
-        set_uni[i] = false;
-    }
+    bool_reset(uni, set_uni, false);
 
     //elements contained in sets on line [l] - [line_a] and [line_b]
     int l = l_a;
@@ -1110,10 +1110,7 @@ void set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
 
 
     bool set_int[uni->length];   //intersect of sets on lines [line_a] and [line_b]
-    for (int i = 0; i < uni->length; i++)
-    {
-        set_int[i] = false;
-    }
+    bool_reset(uni, set_int, false);
 
     //elements contained in both sets on lines [line_a] and [line_b]
     for (int i = 0; i < data->arr_s[l_a]->length; i++)
@@ -1147,10 +1144,7 @@ void set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
 
 
     bool set_min[uni->length];   //set on line [line_a] minus set on line [line_b]
-    for (int i = 0; i < uni->length; i++)
-    {
-        set_min[i] = false;
-    }
+    bool_reset(uni, set_min, false);
 
     //elements contained in set on line [line_a]
     for (int i = 0; i < data->arr_s[l_a]->length; i++)
@@ -1252,7 +1246,6 @@ void set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
     Commands for relations
 */
 
-
 /* find relation defined on line [line] */
 int rel_line(data_t* data, int line)
 {
@@ -1270,48 +1263,61 @@ int rel_line(data_t* data, int line)
     return -1;
 }
 
-/* returns the domain of relation with index [l] */
-void rel_domainf(data_t* data, uni_t* uni, int l, bool* rel)
+/* returns chosen elements of relation with index [l] */
+void rel_elements(data_t* data, uni_t* uni, int l, int el, bool* rel)
 {
-    bool rel_dom[uni->length];   //domain of relation with index [l]
-    for (int i = 0; i < uni->length; i++)
-    {
-        rel_dom[i] = false;
-    }
+    bool_reset(uni, rel, false);
 
-    //first elements from relation on line [line]
+    //chosen elements from relation with index [l]
     for (int i = 0; i < data->arr_r[l]->length; i++)
     {
-        rel_dom[data->arr_r[l]->elem_arr[i].e_1] = true;
+        if (el == 1)
+        {
+            rel[data->arr_r[l]->elem_arr[i].e_1] = true;
+        }
+        else
+        {
+            rel[data->arr_r[l]->elem_arr[i].e_2] = true;
+        }
     }
 
-    *rel = rel_dom;
     return;
 }
 
-/* returns the codomain of relation with index [l] */
-void rel_codomainf(data_t* data, uni_t* uni, int l, bool* rel)
+/* TO DO: vymyslet nazev a popis */
+bool rel_uh(data_t* data, uni_t* uni, int l, int el)
 {
-    bool rel_cod[uni->length];   //codomain of relation with index [l]
-    for (int i = 0; i < uni->length; i++)
-    {
-        rel_cod[i] = false;
-    }
+    bool rel_el[uni->length];  //chosen values from relation on line [line]
+    bool_reset(uni, rel_el, false);
 
-    //first elements from relation on line [line]
     for (int i = 0; i < data->arr_r[l]->length; i++)
     {
-        rel_cod[data->arr_r[l]->elem_arr[i].e_2] = true;
+        if (el == 1)
+        {
+            //x value found multiple times
+            if (rel_el[data->arr_r[l]->elem_arr[i].e_1])
+            {
+                return false;
+            }
+
+            rel_el[data->arr_r[l]->elem_arr[i].e_1] = true;
+        }
+        else
+        {
+            //y value found multiple times
+            if (rel_el[data->arr_r[l]->elem_arr[i].e_2])
+            {
+                return false;
+            }
+
+            rel_el[data->arr_r[l]->elem_arr[i].e_2] = true;
+        }
     }
 
-    *rel = rel_cod;
-    return;
+    return true;
 }
 
-
-
-
-/* prints whether or not is the relation on line [line] reflexive, ??? */
+/* prints whether or not is the relation on line [line] reflexive */
 void rel_reflexive(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1323,17 +1329,17 @@ void rel_reflexive(data_t* data, uni_t* uni, int line)
     }
 
 
-    bool* rel_dom;
-    rel_domainf(data, uni, l, rel_dom);
+    bool rel_el[uni->length];  //all elements from relation on line [line]
+    bool_reset(uni, rel_el, false);
 
-    bool* rel_cod;
-    rel_codomainf(data, uni, l, rel_cod);
+    for (int i = 0; i < data->arr_r[l]->length; i++)
+    {
+        rel_el[data->arr_r[l]->elem_arr[i].e_1] = true;
+        rel_el[data->arr_r[l]->elem_arr[i].e_2] = true;
+    }
 
     bool rel_ref[uni->length];   //reflexive elements in relation on line [line]
-    for (int i = 0; i < uni->length; i++)
-    {
-        rel_ref[i] = false;
-    }
+    bool_reset(uni, rel_ref, false);
 
     for (int i = 0; i < data->arr_r[l]->length; i++)
     {
@@ -1343,9 +1349,11 @@ void rel_reflexive(data_t* data, uni_t* uni, int line)
         }
     }
 
+    //checks if all elements of relation on line [line] are reflexive
     for (int i = 0; i < uni->length; i++)
     {
-        if ((rel_dom[i] || rel_cod) && !rel_ref[i])
+        //an element isn't reflexive
+        if (rel_el[i] && !rel_ref[i])
         {
             fprintf(stdout, "false\n");
             return;
@@ -1398,7 +1406,7 @@ void rel_transitive(data_t* data, uni_t* uni, int line)
     //TO DO
 }
 
-/* prints whether or not is the relation on line [line] a function, TO DO */
+/* prints whether or not is the relation on line [line] a function */
 void rel_function(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1409,7 +1417,16 @@ void rel_function(data_t* data, uni_t* uni, int line)
         return;
     }
 
-    //TO DO
+
+    //x values aren't in relation on line [line] more than once
+    if (rel_uh(data, uni, l, 1))
+    {
+        fprintf(stdout, "true\n");
+        return;
+    }
+
+    fprintf(stdout, "false\n");
+    return;
 }
 
 /* prints the domain of the function on line [line] */
@@ -1424,21 +1441,9 @@ void rel_domain(data_t* data, uni_t* uni, int line)
     }
 
 
-    bool* rel_dom;
+    bool rel_dom[uni->length];  //domain of relation on line [line]
+    rel_elements(data, uni, l, 1, rel_dom);
 
-    /*bool rel_dom[uni->length];   //domain of relation on line [line]
-    for (int i = 0; i < uni->length; i++)
-    {
-        rel_dom[i] = false;
-    }
-
-    //first elements from relation on line [line]
-    for (int i = 0; i < data->arr_r[l]->length; i++)
-    {
-        rel_dom[data->arr_r[l]->elem_arr[i].e_1] = true;
-    }*/
-
-    rel_domainf(data, uni, l, rel_dom);
     bool_print(uni, rel_dom);
     return;
 }
@@ -1455,26 +1460,14 @@ void rel_codomain(data_t* data, uni_t* uni, int line)
     }
 
 
-    bool* rel_cod;  //codomain of relation on line [line]
+    bool rel_cod[uni->length];  //codomain of relation on line [line]
+    rel_elements(data, uni, l, 2, rel_cod);
 
-    /*bool rel_cod[uni->length];   //codomain of relation on line [line]
-    for (int i = 0; i < uni->length; i++)
-    {
-        rel_cod[i] = false;
-    }
-
-    //second elements from relation on line [line]
-    for (int i = 0; i < data->arr_r[l]->length; i++)
-    {
-        rel_cod[data->arr_r[l]->elem_arr[i].e_2] = true;
-    }*/
-
-    rel_codomainf(data, uni, l, rel_cod);
     bool_print(uni, rel_cod);
     return;
 }
 
-/* prints whether or not is the relation on line [line] injective, TO DO */
+/* prints whether or not is the relation on line [line] injective */
 void rel_injective(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
@@ -1485,7 +1478,16 @@ void rel_injective(data_t* data, uni_t* uni, int line)
         return;
     }
 
-    //TO DO
+
+    //y values aren't in relation on line [line] more than once
+    if (rel_uh(data, uni, l, 2))
+    {
+        fprintf(stdout, "true\n");
+        return;
+    }
+
+    fprintf(stdout, "false\n");
+    return;
 }
 
 /* prints whether or not is the relation on line [line] surjective, TO DO */
@@ -1498,6 +1500,7 @@ void rel_surjective(data_t* data, uni_t* uni, int line)
     {
         return;
     }
+
 
     //TO DO
 }
@@ -1515,6 +1518,7 @@ void rel_bijective(data_t* data, uni_t* uni, int line)
 
     //TO DO
 }
+
 
 ///DELETE LATER
 void test_print(uni_t uni, data_t data)
@@ -1552,7 +1556,7 @@ int main(int argc, char **argv)
     test_print(uni, data);
 
 
-    set_empty(&data, 4);
+    /*set_empty(&data, 4);
     set_card(&data, 2);
     set_complement(&data, &uni, 1);
     set_union(&data, &uni, 2, 3);
@@ -1560,21 +1564,21 @@ int main(int argc, char **argv)
     set_minus(&data, &uni, 2, 3);
     set_subseteq(&data, &uni, 2, 3);
     set_subset(&data, &uni, 3, 2);
-    set_equals(&data, &uni, 2, 3);
+    set_equals(&data, &uni, 2, 3);*/
 
 
-/*
-    rel_reflexive(&data, &uni, 4);  //???
-    rel_symmetric(&data, &uni, 4);  //TO DO
-    rel_antisymmetric(&data, &uni, 4);  //TO DO
-    rel_transitive(&data, &uni, 4); //TO DO
-    rel_function(&data, &uni, 4);   //TO DO
+
+    rel_reflexive(&data, &uni, 5);
+    //rel_symmetric(&data, &uni, 4);  //TO DO
+    //rel_antisymmetric(&data, &uni, 4);  //TO DO
+    //rel_transitive(&data, &uni, 4); //TO DO
+    rel_function(&data, &uni, 4);
     rel_domain(&data, &uni, 4);
     rel_codomain(&data, &uni, 4);
-    rel_injective(&data, &uni, 4);  //TO DO
-    rel_surjective(&data, &uni, 4); //TO DO
-    rel_bijective(&data, &uni, 4);  //TO DO
-*/
+    rel_injective(&data, &uni, 5);
+    //rel_surjective(&data, &uni, 4); //TO DO
+    //rel_bijective(&data, &uni, 4);  //TO DO
+
 
     ///TEST KONEC
 
