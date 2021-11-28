@@ -15,10 +15,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-/** definitions of constants **/
-#define ELEM_LEN 31         //max. allowed length of strings + 1
-#define LINES_MAX 1000      //max. allowed number of lines in a file
-
 /** definitions of new data types **/
 //universe
 typedef struct{
@@ -58,6 +54,21 @@ typedef struct{
     int length_r;
     int cap_r;
 } data_t;
+
+//function pointer
+typedef void (*pfunc)(data_t, uni_t, int, int*); ///PREDELAT NA INT KVULI CHYBAM!!!
+
+/** function prototypes **/
+
+/** definitions of constants **/
+#define ELEM_LEN 31         //max. allowed length of strings + 1
+#define LINES_MAX 1000      //max. allowed number of lines in a file
+#define COM_NUM 19          //number of supported commands
+
+const char com_arr_n[COM_NUM][ELEM_LEN] = {         //names of all supported commands
+    "empty", "card", "complement", "union", "intersect", "minus", "subseteq", "subset", "equals",
+    "reflexive", "symmetric", "antisymmetric", "transitive", "function", "domain", "codomain", "injective", "surjective", "bijective"};
+//const pfunc com_arr_p[COM_NUM] = {&memory_err};        //array of corresponding function pointers
 
 /** definitions of functions **/
 //functions return 1 when successful and 0 when not
