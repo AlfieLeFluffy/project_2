@@ -56,7 +56,7 @@ typedef struct{
 } data_t;
 
 //function pointer
-typedef void (*pfunc1)(data_t*, int, int*);         ///PREDELAT NA INT KVULI CHYBAM!!!
+typedef void (*pfunc1)(data_t*, int);               ///PREDELAT NA INT KVULI CHYBAM!!!
 typedef void (*pfunc2)(data_t*, uni_t*, int, int*); ///PREDELAT NA INT KVULI CHYBAM!!!
 
 /** function prototypes **/
@@ -95,7 +95,7 @@ const char com_arr_n[COM_NUM][ELEM_LEN] = {
     "empty", "card",                                                                    //commands without parameter universe
     "complement", "union", "intersect", "minus", "subseteq", "subset", "equals",        //other set commands
     "reflexive", "symmetric", "antisymmetric", "transitive", "function", "domain", "codomain", "injective", "surjective", "bijective"};     //rel commands
-/*
+
 //array of function pointers to functions without universe parameter
 const pfunc1 com_arr_p1[COM_DIFF] = {
     &set_empty, &set_card};
@@ -103,7 +103,7 @@ const pfunc1 com_arr_p1[COM_DIFF] = {
 const pfunc2 com_arr_p2[COM_NUM - COM_DIFF] = {
     &set_complement, &set_union, &set_intersect, &set_minus, &set_subseteq, &set_subset, &set_equals,
     &rel_reflexive, &rel_symmetric, &rel_antisymmetric, &rel_transitive, &rel_function, &rel_domain, &rel_codomain, &rel_injective, &rel_surjective, &rel_bijective};
-*/
+
 
 /** definitions of functions **/
 //functions return 1 when successful and 0 when not
@@ -837,8 +837,7 @@ int snum_to_arr(int i, int arg_arr[], char strnum[], int line)
 
     arg_arr[i] = strtoul(strnum, &p_end, 10);
 
-    if (p_end[0] != '\0') {
-        printf("strnum = %s\n", strnum);
+    if (p_end[0] != '\0' || arg_arr[i] < 1 || arg_arr[i] > LINES_MAX) {
         fprintf(stderr, "Invalid format of command argument on line %d\n", line);
         return 0;
     }
@@ -891,18 +890,35 @@ int load_com_args(FILE *fp, int *arg_count, int arg_arr[], int line)
 }
 
 /* function for executing command */
-int do_com()
+int do_com(data_t *d, uni_t *u, int com_i,int arg_count, int arg_arr[], int line)     ///PREDELAT NA INT!!!!!!!
 {
+    if (com_i <= COM_DIFF){
+        /*if ( (*com_arr_p1[i])(d, arg_count, arg_arr) == 0 ){
+            return 0;
+        }*/
+        if (arg_count != 1) {
+            arg_err(line);
+            return 0;
+        }
+        (*com_arr_p1[com_i])(d, arg_arr[0]);
+        return 1;
+    }
+    /*if ( (*com_arr_p2[i])(d, u, arg_count, arg_arr) == 0 ){
+            return 0;
+        }*/
+    (*com_arr_p2[com_i - COM_DIFF])(d, u, arg_count, arg_arr);
+
     return 1;
 }
 
 /* function for loading and executing command from file */
-int load_com(FILE *fp, data_t *d, uni_t *u, int line)       ///KONTROLNI PRINTY
+int load_com(FILE *fp, data_t *d, uni_t *u, int line)       ///KONTROLNI PRINTY ///pridat predani poli com, pokud nebudou globalni const!!
 {
     char com[ELEM_LEN];
     int len;
     char c;
     bool found = false;
+    int com_i;          //index of command in array of commands
     int arg_count = 0;
     int arg_arr[ARG_MAX];
 
@@ -917,6 +933,7 @@ int load_com(FILE *fp, data_t *d, uni_t *u, int line)       ///KONTROLNI PRINTY
     //check, if command exists
     for (int i = 0; i < COM_NUM; i++) {
         if (strcmp(com, com_arr_n[i]) == 0) {
+            com_i = i;
             found = true;
             break;
         }
@@ -935,6 +952,11 @@ int load_com(FILE *fp, data_t *d, uni_t *u, int line)       ///KONTROLNI PRINTY
     printf("C %s %d %d %d\n", com, arg_arr[0], arg_arr[1], arg_arr[2]);
     printf("arg num = %d\n", arg_count);
     printf("== END OF TEST COM ==\n\n");
+
+    //execute commands
+    if (do_com(d, u, com_i, arg_count, arg_arr, line) == 0) {
+        return 0;
+    }
 
     return 1;
 }

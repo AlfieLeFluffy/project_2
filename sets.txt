@@ -3,5 +3,5 @@ S a b c x adsda
 S 
 R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
 R 
-C empty 5 2 565
-C union 5 1
+C empty 4
+C card 3
