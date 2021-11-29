@@ -56,23 +56,57 @@ typedef struct{
 } data_t;
 
 //function pointer
-typedef void (*pfunc)(data_t, uni_t, int, int*); ///PREDELAT NA INT KVULI CHYBAM!!!
+typedef void (*pfunc1)(data_t*, int, int*);         ///PREDELAT NA INT KVULI CHYBAM!!!
+typedef void (*pfunc2)(data_t*, uni_t*, int, int*); ///PREDELAT NA INT KVULI CHYBAM!!!
 
 /** function prototypes **/
+//prototypes of command functions because of function pointers
+void set_empty(data_t*, int);
+void set_card(data_t*, int);
+void set_complement(data_t*,uni_t*,int);
+void set_union(data_t*, uni_t*, int, int);
+void set_intersect(data_t*, uni_t*, int, int);
+void set_minus(data_t*, uni_t*, int, int);
+void set_subseteq(data_t*, uni_t*, int, int);
+void set_subset(data_t*, uni_t*, int, int);
+void set_equals(data_t*, uni_t*, int, int);
+
+void rel_reflexive(data_t*, uni_t*, int);
+void rel_symmetric(data_t*, uni_t*, int);
+void rel_antisymmetric(data_t*, uni_t*, int);
+void rel_transitive(data_t*, uni_t*, int);
+void rel_function(data_t*, uni_t*, int);
+void rel_domain(data_t*, uni_t*, int);
+void rel_codomain(data_t*, uni_t*, int);
+void rel_injective(data_t*, uni_t*, int);
+void rel_surjective(data_t*, uni_t*, int);
+void rel_bijective(data_t*, uni_t*, int);
 
 /** definitions of constants **/
-#define ELEM_LEN 31         //max. allowed length of strings + 1
+#define ELEM_LEN 31         //max. allowed length of strings + 1 ... used also for commands (changeable if needed)
 #define LINES_MAX 1000      //max. allowed number of lines in a file
+#define DIGITS_LINES_MAX 5  //digits of LINES_MAX + 1
 #define COM_NUM 19          //number of supported commands
+#define COM_DIFF 2          //number of commands without parameter universe
+#define ARG_MAX 3           //max. number of arguments of any command
 
-const char com_arr_n[COM_NUM][ELEM_LEN] = {         //names of all supported commands
-    "empty", "card", "complement", "union", "intersect", "minus", "subseteq", "subset", "equals",
-    "reflexive", "symmetric", "antisymmetric", "transitive", "function", "domain", "codomain", "injective", "surjective", "bijective"};
-//const pfunc com_arr_p[COM_NUM] = {&memory_err};        //array of corresponding function pointers
+//array of names of all supported commands
+const char com_arr_n[COM_NUM][ELEM_LEN] = {
+    "empty", "card",                                                                    //commands without parameter universe
+    "complement", "union", "intersect", "minus", "subseteq", "subset", "equals",        //other set commands
+    "reflexive", "symmetric", "antisymmetric", "transitive", "function", "domain", "codomain", "injective", "surjective", "bijective"};     //rel commands
+/*
+//array of function pointers to functions without universe parameter
+const pfunc1 com_arr_p1[COM_DIFF] = {
+    &set_empty, &set_card};
+//array of function pointers to functions with universe parameter
+const pfunc2 com_arr_p2[COM_NUM - COM_DIFF] = {
+    &set_complement, &set_union, &set_intersect, &set_minus, &set_subseteq, &set_subset, &set_equals,
+    &rel_reflexive, &rel_symmetric, &rel_antisymmetric, &rel_transitive, &rel_function, &rel_domain, &rel_codomain, &rel_injective, &rel_surjective, &rel_bijective};
+*/
 
 /** definitions of functions **/
 //functions return 1 when successful and 0 when not
-
 
 /*
     Memory and printing functions
@@ -82,6 +116,11 @@ const char com_arr_n[COM_NUM][ELEM_LEN] = {         //names of all supported com
 void memory_err()
 {
     fprintf(stderr, "Memory error\n");
+}
+
+void arg_err(int line)
+{
+    fprintf(stderr, "Invalid number of command arguments on line %d\n", line);
 }
 
 /* function for printing universe */
@@ -429,7 +468,7 @@ char load_str(FILE *fp, char str[], int *len)
     } while (*len < ELEM_LEN - 1);
 
     //leaving while loop is possible only when max. supported length of element is exceeded
-    fprintf(stderr, "Element (%s...) exceeds length of %d\n", str, ELEM_LEN - 1);
+    fprintf(stderr, "String (%s...) exceeds length of %d\n", str, ELEM_LEN - 1);
     return 0;
 }
 
@@ -778,13 +817,129 @@ int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
     return 1;
 }
 
-/* function for loading command from file */
-/*int load_com(FILE *fp, uni_t *u)
+/* function for getting digits from a file */
+void get_digits(FILE *fp, char *c, char strnum[])
+{
+    for (int j = 1; j < DIGITS_LINES_MAX; j++) {
+        *c = fgetc(fp);
+        if (*c == ' ' || *c == '\n') {
+            break;
+        }
+        strnum[j] = *c;
+        strnum[j+1] = '\0';
+    }
+}
+
+/* function for converting string to int and adding it to array */
+int snum_to_arr(int i, int arg_arr[], char strnum[], int line)
+{
+    char *p_end = NULL;  //pointer to end of number in strtoul()
+
+    arg_arr[i] = strtoul(strnum, &p_end, 10);
+
+    if (p_end[0] != '\0') {
+        printf("strnum = %s\n", strnum);
+        fprintf(stderr, "Invalid format of command argument on line %d\n", line);
+        return 0;
+    }
+    return 1;
+
+}
+
+/* function for loading command arguments from file */
+int load_com_args(FILE *fp, int *arg_count, int arg_arr[], int line)
+{
+    char c;
+    int i;
+    char strnum[DIGITS_LINES_MAX];  //number in string
+
+    for (i = 0; i < ARG_MAX; i++) {
+        //get first digit of a number
+        c = skip_space(fp);
+        if (c == '\n') {
+            (*arg_count) = i;
+            return 1;
+        }
+
+        //add it to string
+        strnum[0] = c;
+        strnum[1] = '\0';
+
+        get_digits(fp, &c, strnum);
+
+        //convert string to int and add it to array
+        if (snum_to_arr(i, arg_arr, strnum, line) == 0) {
+            return 0;
+        }
+
+        if (c == '\n') {
+            (*arg_count) = i+1;
+            return 1;
+        }
+
+        //reset
+        strnum[0] = '\0';
+    }
+
+    if (skip_space(fp) == '\n') {
+        (*arg_count) = i+1;
+        return 1;
+    }
+    //else failure
+    arg_err(line);
+    return 0;
+}
+
+/* function for executing command */
+int do_com()
 {
     return 1;
-}*/
+}
 
-/*  */
+/* function for loading and executing command from file */
+int load_com(FILE *fp, data_t *d, uni_t *u, int line)       ///KONTROLNI PRINTY
+{
+    char com[ELEM_LEN];
+    int len;
+    char c;
+    bool found = false;
+    int arg_count = 0;
+    int arg_arr[ARG_MAX];
+
+    //load command
+    if ((c = load_str(fp, com, &len)) == 0) {
+        return 0;
+    }
+    if (c == '\n') {
+        fprintf(stderr, "Command arguments missing on line %d\n", line);
+        return 0;
+    }
+    //check, if command exists
+    for (int i = 0; i < COM_NUM; i++) {
+        if (strcmp(com, com_arr_n[i]) == 0) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        fprintf(stderr, "Unknown command (%s) on line %d\n", com, line);
+        return 0;
+    }
+
+    //load command arguments
+    if (load_com_args(fp, &arg_count, arg_arr, line) == 0) {
+        return 0;
+    }
+
+    printf("===== TEST COM =====\n");                                                      ///SMAZAT!!!!!!!!!!!
+    printf("C %s %d %d %d\n", com, arg_arr[0], arg_arr[1], arg_arr[2]);
+    printf("arg num = %d\n", arg_count);
+    printf("== END OF TEST COM ==\n\n");
+
+    return 1;
+}
+
+/* function for space detection */
 int is_space(FILE *fp, int lines)
 {
     if (fgetc(fp) == ' '){
@@ -794,18 +949,19 @@ int is_space(FILE *fp, int lines)
     return 0;
 }
 
-
 /* function for loading and checking a line with a universe on it */
-int caseUni(FILE *fp, uni_t *u, data_t *d, int lines)
+int caseU(FILE *fp, uni_t *u, data_t *d, int lines)
 {
-    if (is_space(fp, lines) == 0){
-        return 0;
-    }
     //check if universe is on line 1
     if (lines != 1) {
         fprintf(stderr, "Universe on an unexpected line (line %d)\n", lines);
         return 0;
     }
+
+    if (is_space(fp, lines) == 0){
+        return 0;
+    }
+
     //load universe from line
     if (load_uni(fp, u) == 0){
         return 0;
@@ -820,16 +976,18 @@ int caseUni(FILE *fp, uni_t *u, data_t *d, int lines)
 }
 
 /* function for loading and checking a line with a set on it */
-int caseSet(FILE *fp, uni_t *u, data_t *d, int lines)
+int caseS(FILE *fp, uni_t *u, data_t *d, int lines)
 {
-    if (is_space(fp, lines) == 0){
-        return 0;
-    }
     //check if set is not on line 1
     if (lines == 1) {
         fprintf(stderr, "Universe expected on line 1 instead of set\n");
         return 0;
     }
+
+    if (is_space(fp, lines) == 0){
+        return 0;
+    }
+
     //load set into data
     if (load_set(fp, d, u, lines) == 0) {
         return 0;
@@ -840,18 +998,40 @@ int caseSet(FILE *fp, uni_t *u, data_t *d, int lines)
 }
 
 /* function for loading and checking a line with a relation on it */
-int caseRel(FILE *fp, uni_t *u, data_t *d, int lines)
+int caseR(FILE *fp, uni_t *u, data_t *d, int lines)
 {
-    if (is_space(fp, lines) == 0){
-        return 0;
-    }
     //check if relation in not on line 1
     if (lines == 1) {
         fprintf(stderr, "Universe expected on line 1 instead of relation\n");
         return 0;
     }
+
+    if (is_space(fp, lines) == 0){
+        return 0;
+    }
     //load relation into data
     if (load_rel(fp, d, u, lines) == 0) {
+        return 0;
+    }
+
+    //else success
+    return 1;
+}
+
+int caseC(FILE *fp, uni_t *u, data_t *d, int lines)
+{
+    //check if command in not on line 1
+    if (lines == 1) {
+        fprintf(stderr, "Universe expected on line 1 instead of command\n");
+        return 0;
+    }
+
+    if (is_space(fp, lines) == 0){
+        return 0;
+    }
+
+    //load and execute command
+    if (load_com(fp, d, u, lines) == 0) {
         return 0;
     }
 
@@ -867,29 +1047,27 @@ int text_load(FILE *fp, data_t *d, uni_t *u)     ///TODO commands
         //check the type of line
         switch(fgetc(fp)) {
             case 'U':
-                if (caseUni(fp, u, d, lines) == 0){
+                if (caseU(fp, u, d, lines) == 0){
                     return 0;
                 }
                 continue;
 
             case 'S':
-                if (caseSet(fp, u, d, lines) == 0){
+                if (caseS(fp, u, d, lines) == 0){
                     return 0;
                 }
                 continue;
 
             case 'R':
-                if (caseRel(fp, u, d, lines) == 0){
+                if (caseR(fp, u, d, lines) == 0){
                     return 0;
                 }
                 continue;
 
             case 'C':
-                if (lines == 1) {
-                    fprintf(stderr, "Universe expected on line 1 instead of command\n");
+                if (caseC(fp, u, d, lines) == 0){
                     return 0;
                 }
-                //load_com(fp, u);
                 continue;
 
             case EOF:
