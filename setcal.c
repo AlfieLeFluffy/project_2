@@ -2,10 +2,10 @@
  *
  * setcal.c
  *
- * ver 0.3
+ * ver 0.5
  * =========================
  *
- * 26.11.2021
+ * 29.11.2021
  *
  *******************************/
 
@@ -47,6 +47,7 @@ typedef struct{
 
 //all sets and relations
 typedef struct{
+    uni_t uni;
     set_t **arr_s;      //array of all set pointers
     int length_s;
     int cap_s;
@@ -56,14 +57,13 @@ typedef struct{
 } data_t;
 
 //function pointer
-typedef int (*pfunc1)(data_t*, int);
-typedef int (*pfunc2)(data_t*, uni_t*, int, int*);
+typedef int (*pfunc)(data_t*, int, int*, int);
 
 /** function prototypes **/
 //prototypes of command functions because of function pointers
-int set_empty(data_t*, int);
-int set_card(data_t*, int);
-int set_complement(data_t*,uni_t*,int, int*);
+int set_empty(data_t*, int, int*, int);
+int set_card(data_t*, int, int*, int);
+int set_complement(data_t*, int, int*, int);
 int set_union(data_t*, uni_t*, int, int);
 int set_intersect(data_t*, uni_t*, int, int);
 int set_minus(data_t*, uni_t*, int, int);
@@ -96,12 +96,10 @@ const char com_arr_n[COM_NUM][ELEM_LEN] = {
     "complement", "union", "intersect", "minus", "subseteq", "subset", "equals",        //other set commands
     "reflexive", "symmetric", "antisymmetric", "transitive", "function", "domain", "codomain", "injective", "surjective", "bijective"};     //rel commands
 
-//array of function pointers to functions without universe parameter
-const pfunc1 com_arr_p1[COM_DIFF] = {
-    &set_empty, &set_card};
-//array of function pointers to functions with universe parameter
-const pfunc2 com_arr_p2[COM_NUM - COM_DIFF] = {
-    &set_complement, &set_union, &set_intersect, &set_minus, &set_subseteq, &set_subset, &set_equals,
+
+//array of function pointers
+const pfunc com_arr_p[COM_NUM - COM_DIFF] = {
+    &set_empty, &set_card, &set_complement, &set_union, &set_intersect, &set_minus, &set_subseteq, &set_subset, &set_equals,
     &rel_reflexive, &rel_symmetric, &rel_antisymmetric, &rel_transitive, &rel_function, &rel_domain, &rel_codomain, &rel_injective, &rel_surjective, &rel_bijective};
 
 
@@ -536,7 +534,7 @@ int load_uni(FILE *fp, uni_t *u)
 }
 
 /* function for adding universe as set to data */
-int u_to_s(uni_t *u, data_t *d, int line)
+int u_to_s(data_t *d, int line)
 {
     set_t *s = malloc(sizeof(set_t));
     if (s == NULL) {
@@ -544,7 +542,7 @@ int u_to_s(uni_t *u, data_t *d, int line)
         return 0;
     }
     set_create(s, line);
-    for (int i = 0; i < u->length; i++){
+    for (int i = 0; i < d->uni.length; i++){
         //fill set with all universe's indexes
         if (set_append(s, i) == 0){
             return 0;
@@ -560,7 +558,7 @@ int u_to_s(uni_t *u, data_t *d, int line)
 }
 
 /* function for finding out if element already is in set */
-int isin_set(set_t s,int elem)
+int isin_set(set_t s, int elem)
 {
     for (int i = 0; i < s.length; i++) {
         if (s.elem_arr[i] == elem) {
@@ -614,7 +612,7 @@ int elem_to_s(uni_t *u, set_t *s, char temp_s[], int line)
 }
 
 /* function for loading all elements in a line to set */
-int load_set(FILE *fp, data_t *d, uni_t *u, int line)
+int load_set(FILE *fp, data_t *d, int line)
 {
     //allocation of set
     set_t *s = malloc(sizeof(set_t));
@@ -639,7 +637,7 @@ int load_set(FILE *fp, data_t *d, uni_t *u, int line)
         }
 
         //load element to set
-        if (elem_to_s(u, s, temp_s, line) == 0) {
+        if (elem_to_s(&(d->uni), s, temp_s, line) == 0) {
             return 0;
         }
 
@@ -804,7 +802,7 @@ int pair_to_r(uni_t *u, rel_t *r, char temp_s1[], char temp_s2[], int line)
 }
 
 /* function for loading all elements in a line to relation */
-int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
+int load_rel(FILE *fp, data_t *d, int line)
 {
     //allocation of relation
     rel_t *r = malloc(sizeof(rel_t));
@@ -826,7 +824,7 @@ int load_rel(FILE *fp, data_t *d, uni_t *u, int line)
         }
 
         //load pair to relation
-        if ((pair_to_r(u, r, temp_s1, temp_s2, line)) == 0) {
+        if ((pair_to_r(&(d->uni), r, temp_s1, temp_s2, line)) == 0) {
             return 0;
         }
     } while( c != '\n');
@@ -912,28 +910,20 @@ int load_com_args(FILE *fp, int *arg_count, int arg_arr[], int line)
 }
 
 /* function for executing command */
-int do_com(data_t *d, uni_t *u, int com_i,int arg_count, int arg_arr[], int line)     ///PREDELAT NA INT!!!!!!!
+/*
+int do_com(data_t *d, int com_i,int arg_count, int arg_arr[], int line)     ///PREDELAT NA INT!!!!!!!
 {
-    if (com_i < COM_DIFF){
 
-        if (arg_count != 1) {
-            arg_err(line);
-            return 0;
-        }
-        if ( (*com_arr_p1[com_i])(d, arg_arr[0]) == 0 ){
-            return 0;
-        }
-        return 1;
-    }
-    if ( (*com_arr_p2[com_i - COM_DIFF])(d, u, arg_count, arg_arr) == 0 ){
+    if ( (*com_arr_p[com_i])(d, arg_count, arg_arr) == 0 ){
         return 0;
     }
 
     return 1;
 }
+*/
 
 /* function for loading and executing command from file */
-int load_com(FILE *fp, data_t *d, uni_t *u, int line)       ///KONTROLNI PRINTY ///pridat predani poli com, pokud nebudou globalni const!!
+int load_com(FILE *fp, data_t *d, int line)       ///KONTROLNI PRINTY ///pridat predani poli com, pokud nebudou globalni const!!
 {
     char com[ELEM_LEN];
     int len;
@@ -975,7 +965,7 @@ int load_com(FILE *fp, data_t *d, uni_t *u, int line)       ///KONTROLNI PRINTY 
     printf("== END OF TEST COM ==\n\n");
 
     //execute commands
-    if (do_com(d, u, com_i, arg_count, arg_arr, line) == 0) {
+    if ( (*com_arr_p[com_i])(d, arg_count, arg_arr, line) == 0 ){
         return 0;
     }
 
@@ -993,7 +983,7 @@ int is_space(FILE *fp, int lines)
 }
 
 /* function for loading and checking a line with a universe on it */
-int caseU(FILE *fp, uni_t *u, data_t *d, int lines)
+int caseU(FILE *fp, data_t *d, int lines)
 {
     //check if universe is on line 1
     if (lines != 1) {
@@ -1006,11 +996,11 @@ int caseU(FILE *fp, uni_t *u, data_t *d, int lines)
     }
 
     //load universe from line
-    if (load_uni(fp, u) == 0){
+    if (load_uni(fp, &(d->uni)) == 0){
         return 0;
     }
     //load universe as a set into data
-    if (u_to_s(u, d, lines) == 0){
+    if (u_to_s(d, lines) == 0){
         return 0;
     }
 
@@ -1019,7 +1009,7 @@ int caseU(FILE *fp, uni_t *u, data_t *d, int lines)
 }
 
 /* function for loading and checking a line with a set on it */
-int caseS(FILE *fp, uni_t *u, data_t *d, int lines)
+int caseS(FILE *fp, data_t *d, int lines)
 {
     //check if set is not on line 1
     if (lines == 1) {
@@ -1032,7 +1022,7 @@ int caseS(FILE *fp, uni_t *u, data_t *d, int lines)
     }
 
     //load set into data
-    if (load_set(fp, d, u, lines) == 0) {
+    if (load_set(fp, d, lines) == 0) {
         return 0;
     }
 
@@ -1041,7 +1031,7 @@ int caseS(FILE *fp, uni_t *u, data_t *d, int lines)
 }
 
 /* function for loading and checking a line with a relation on it */
-int caseR(FILE *fp, uni_t *u, data_t *d, int lines)
+int caseR(FILE *fp, data_t *d, int lines)
 {
     //check if relation in not on line 1
     if (lines == 1) {
@@ -1053,7 +1043,7 @@ int caseR(FILE *fp, uni_t *u, data_t *d, int lines)
         return 0;
     }
     //load relation into data
-    if (load_rel(fp, d, u, lines) == 0) {
+    if (load_rel(fp, d, lines) == 0) {
         return 0;
     }
 
@@ -1061,7 +1051,7 @@ int caseR(FILE *fp, uni_t *u, data_t *d, int lines)
     return 1;
 }
 
-int caseC(FILE *fp, uni_t *u, data_t *d, int lines)
+int caseC(FILE *fp, data_t *d, int lines)
 {
     //check if command in not on line 1
     if (lines == 1) {
@@ -1074,7 +1064,7 @@ int caseC(FILE *fp, uni_t *u, data_t *d, int lines)
     }
 
     //load and execute command
-    if (load_com(fp, d, u, lines) == 0) {
+    if (load_com(fp, d, lines) == 0) {
         return 0;
     }
 
@@ -1083,32 +1073,32 @@ int caseC(FILE *fp, uni_t *u, data_t *d, int lines)
 }
 
 /* function for loading setcal-formatted text from a file */
-int text_load(FILE *fp, data_t *d, uni_t *u)     ///TODO commands
+int text_load(FILE *fp, data_t *d)     ///TODO commands
 {
     //read file by lines
     for (int lines = 1; lines <= LINES_MAX + 1; lines++) {
         //check the type of line
         switch(fgetc(fp)) {
             case 'U':
-                if (caseU(fp, u, d, lines) == 0){
+                if (caseU(fp, d, lines) == 0){
                     return 0;
                 }
                 continue;
 
             case 'S':
-                if (caseS(fp, u, d, lines) == 0){
+                if (caseS(fp, d, lines) == 0){
                     return 0;
                 }
                 continue;
 
             case 'R':
-                if (caseR(fp, u, d, lines) == 0){
+                if (caseR(fp, d, lines) == 0){
                     return 0;
                 }
                 continue;
 
             case 'C':
-                if (caseC(fp, u, d, lines) == 0){
+                if (caseC(fp, d, lines) == 0){
                     return 0;
                 }
                 continue;
@@ -1126,7 +1116,7 @@ int text_load(FILE *fp, data_t *d, uni_t *u)     ///TODO commands
 }
 
 /* function for opening a file and loading its content */
-int file_load(char **argv, data_t *d, uni_t *u)
+int file_load(char **argv, data_t *d)
 {
     FILE *fp = fopen(argv[1], "r");
     if (fp == NULL){
@@ -1134,9 +1124,9 @@ int file_load(char **argv, data_t *d, uni_t *u)
         return 0;
     }
 
-    if (text_load(fp, d, u) == 0){
+    if (text_load(fp, d) == 0){
         fclose(fp);
-        destroy_all(d, u);
+        destroy_all(d, &(d->uni));
         return 0;
     }
     fclose(fp);
@@ -1194,10 +1184,10 @@ int set_line(data_t* data, int line)
 }
 
 /* returns whether or not is set on line [line_a] a subset of set on line [line_b] */
-bool set_sub(data_t* data, uni_t* uni, int l_a, int l_b)
+bool set_sub(data_t* data, int l_a, int l_b)
 {
-    bool set_b[uni->length];   //elements of set on line [line_b]
-    bool_reset(uni, set_b, false);
+    bool set_b[data->uni.length];   //elements of set on line [line_b]
+    bool_reset(&(data->uni), set_b, false);
 
     for (int i = 0; i < data->arr_s[l_b]->length; i++)
     {
@@ -1220,9 +1210,14 @@ bool set_sub(data_t* data, uni_t* uni, int l_a, int l_b)
 
 
 /* prints whether or not is set on line [line] empty  */
-int set_empty(data_t* data, int line)
+int set_empty(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l = set_line(data, line);  //index of set on line [line]
+    if (arg_count != 1){
+        arg_err(lines);
+        return 0;
+    }
+
+    int l = set_line(data, arg_arr[0]);  //index of set on line [line]
 
     //invalid argument [line]
     if (l == -1)
@@ -1244,8 +1239,14 @@ int set_empty(data_t* data, int line)
 }
 
 /* prints number of elements in set on line [line] */
-int set_card(data_t* data, int line)
+int set_card(data_t* data, int arg_count, int arg_arr[], int lines)
 {
+    if (arg_count != 1){
+        arg_err(lines);
+        return 0;
+    }
+
+    int line = arg_arr[0];
     int l = set_line(data, line);  //index of set on line [line]
 
     //invalid argument [line]
@@ -1255,16 +1256,17 @@ int set_card(data_t* data, int line)
     }
 
 
-    fprintf(stdout, "Set on line %d contains %d elements.\n", line, data->arr_s[l]->length);
+    fprintf(stdout, "Set on line %d contains %d elements.\n", l, data->arr_s[l]->length);
     return 1;
 }
 
 /* prints complement of set on line [line] */
-int set_complement(data_t* data, uni_t* uni, int arg_count, int arg_arr[])
+int set_complement(data_t* data, int arg_count, int arg_arr[], int lines)
 {
     if (arg_count != 1){
-        printf("arg_count: %d\n", arg_count);
-        arg_err2();                                         ///TEMP ERROR
+        arg_err(lines);
+        return 0;
+
         return 0;
     }
     int l = set_line(data, arg_arr[0]);  //index of set on line [line]
@@ -1276,8 +1278,8 @@ int set_complement(data_t* data, uni_t* uni, int arg_count, int arg_arr[])
     }
 
 
-    bool set_comp[uni->length];   //complement of set on line [line]
-    bool_reset(uni, set_comp, true);
+    bool set_comp[data->uni.length];   //complement of set on line [line]
+    bool_reset(&(data->uni), set_comp, true);
 
     //elements contained in set on line [line_a]
     for (int i = 0; i < data->arr_s[l]->length; i++)
@@ -1285,7 +1287,7 @@ int set_complement(data_t* data, uni_t* uni, int arg_count, int arg_arr[])
         set_comp[data->arr_s[l]->elem_arr[i]] = false;
     }
 
-    bool_print(uni, set_comp);
+    bool_print(&(data->uni), set_comp);
     return 1;
 }
 
@@ -1400,7 +1402,7 @@ int set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
 
 
     //set on line [line_a] is a subset of set on line [line_b]
-    if (set_sub(data, uni, l_a, l_b))
+    if (set_sub(data, l_a, l_b))
     {
         fprintf(stdout, "true\n");
         return 1;
@@ -1426,7 +1428,7 @@ int set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
 
     //set on line [line_a] is a subset of set on line [line_b]
     ///and set on line [line_b] isn't a subset of set on line [line_a]
-    if (set_sub(data, uni, l_a, l_b) && !set_sub(data, uni, l_b, l_a))
+    if (set_sub(data, l_a, l_b) && !set_sub(data, l_b, l_a))
     {
         fprintf(stdout, "true\n");
         return 1;
@@ -1453,7 +1455,7 @@ int set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
 
     //set on line [line_a] is a subset of set on line [line_b]
     ///and set on line [line_b] is a subset of set on line [line_a]
-    if (set_sub(data, uni, l_a, l_b) && set_sub(data, uni, l_b, l_a))
+    if (set_sub(data, l_a, l_b) && set_sub(data, l_b, l_a))
     {
         fprintf(stdout, "true\n");
         return 1;
@@ -1755,39 +1757,39 @@ int rel_bijective(data_t* data, uni_t* uni, int line)
 
 
 ///DELETE LATER
-void test_print(uni_t uni, data_t data)
+void test_print(data_t data)
 {
     printf("=== Kontrola cteni ze souboru ===\n");
-    uni_print(&uni);
+    uni_print(&(data.uni));
     for(int i=0;i<data.length_s; i++){
-        set_print(data.arr_s[i], &uni);
+        set_print(data.arr_s[i], &(data.uni));
     }
     for(int i=0;i<data.length_r; i++){
-        rel_print(data.arr_r[i], &uni);
+        rel_print(data.arr_r[i], &(data.uni));
     }
     printf("=== Kontrola cteni ze souboru ===\n\n");
 }
 
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
     //check program parameters
     if(check_param(argc) == 0){
         return EXIT_FAILURE;
     }
 
-    uni_t uni;
+    //uni_t uni;
     data_t data;
 
     data_create(&data);
 
     //open file and load its content
-    if (file_load(argv, &data, &uni) == 0) {
+    if (file_load(argv, &data) == 0) {
         return EXIT_FAILURE;
     }
 
     ///TEST
-    test_print(uni, data);
+    test_print(data);
 
 
     /*set_empty(&data, 4);
@@ -1802,21 +1804,22 @@ int main(int argc, char **argv)
 
 
 
-    rel_reflexive(&data, &uni, 5);
+    rel_reflexive(&data, &(data.uni), 5);
     //rel_symmetric(&data, &uni, 4);  //TO DO
     //rel_antisymmetric(&data, &uni, 4);  //TO DO
     //rel_transitive(&data, &uni, 4); //TO DO
-    rel_function(&data, &uni, 4);
-    rel_domain(&data, &uni, 4);
-    rel_codomain(&data, &uni, 4);
-    rel_injective(&data, &uni, 5);
+    rel_function(&data, &(data.uni), 4);
+    rel_domain(&data, &(data.uni), 4);
+    rel_codomain(&data, &(data.uni), 4);
+    rel_injective(&data, &(data.uni), 5);
     //rel_surjective(&data, &uni, 4); //TO DO
     //rel_bijective(&data, &uni, 4);  //TO DO
 
     ///TEST KONEC
 
     //memory deallocation
-    destroy_all(&data, &uni);
+    destroy_all(&data, &(data.uni));
 
     return EXIT_SUCCESS;
 }
+

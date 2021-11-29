@@ -3,6 +3,6 @@ S a b c x adsda
 S 
 R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
 R 
-C empty 2    
-C card 3 
+C empty 3    
+C card 2 
 C complement 3 
