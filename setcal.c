@@ -63,7 +63,7 @@ typedef int (*pfunc2)(data_t*, uni_t*, int, int*);
 //prototypes of command functions because of function pointers
 int set_empty(data_t*, int);
 int set_card(data_t*, int);
-int set_complement(data_t*,uni_t*,int);
+int set_complement(data_t*,uni_t*,int, int*);
 int set_union(data_t*, uni_t*, int, int);
 int set_intersect(data_t*, uni_t*, int, int);
 int set_minus(data_t*, uni_t*, int, int);
@@ -121,6 +121,11 @@ void memory_err()
 void arg_err(int line)
 {
     fprintf(stderr, "Invalid number of command arguments on line %d\n", line);
+}
+
+void arg_err2()
+{
+    fprintf(stderr, "Invalid number of command arguments\n");
 }
 
 /* function for printing universe */
@@ -472,6 +477,20 @@ char load_str(FILE *fp, char str[], int *len)
     return 0;
 }
 
+/* function determines whether or not a string is setcal keyword */
+int is_keyword(char str[])
+{
+    for (int i = 0; i < COM_NUM; i++){
+        if (strcmp(str, com_arr_n[i]) == 0){
+            return 1;
+        }
+    }
+    if ((strcmp(str, "true") == 0) || (strcmp(str, "false") == 0)){
+        return 1;
+    }
+    return 0;
+}
+
 /* function for loading a line as universe */ ///TODO is_keyword(char str[])
 int load_uni(FILE *fp, uni_t *u)
 {
@@ -493,7 +512,10 @@ int load_uni(FILE *fp, uni_t *u)
             return 0;
         }
 
-        ///is_keyword(temp_s);
+        if (is_keyword(temp_s) == 1){
+            fprintf(stderr, "Keywords cannot be set as universe elements (used: '%s')\n", temp_s);
+            return 0;
+        }
 
         //check if element isn't already in universe
         for (int i = 0; i < u->length; i++) {
@@ -892,21 +914,20 @@ int load_com_args(FILE *fp, int *arg_count, int arg_arr[], int line)
 /* function for executing command */
 int do_com(data_t *d, uni_t *u, int com_i,int arg_count, int arg_arr[], int line)     ///PREDELAT NA INT!!!!!!!
 {
-    if (com_i <= COM_DIFF){
-        /*if ( (*com_arr_p1[i])(d, arg_count, arg_arr) == 0 ){
-            return 0;
-        }*/
+    if (com_i < COM_DIFF){
+
         if (arg_count != 1) {
             arg_err(line);
             return 0;
         }
-        (*com_arr_p1[com_i])(d, arg_arr[0]);
+        if ( (*com_arr_p1[com_i])(d, arg_arr[0]) == 0 ){
+            return 0;
+        }
         return 1;
     }
-    /*if ( (*com_arr_p2[i])(d, u, arg_count, arg_arr) == 0 ){
-            return 0;
-        }*/
-    (*com_arr_p2[com_i - COM_DIFF])(d, u, arg_count, arg_arr);
+    if ( (*com_arr_p2[com_i - COM_DIFF])(d, u, arg_count, arg_arr) == 0 ){
+        return 0;
+    }
 
     return 1;
 }
@@ -1239,9 +1260,14 @@ int set_card(data_t* data, int line)
 }
 
 /* prints complement of set on line [line] */
-int set_complement(data_t* data, uni_t* uni, int line)
+int set_complement(data_t* data, uni_t* uni, int arg_count, int arg_arr[])
 {
-    int l = set_line(data, line);  //index of set on line [line]
+    if (arg_count != 1){
+        printf("arg_count: %d\n", arg_count);
+        arg_err2();                                         ///TEMP ERROR
+        return 0;
+    }
+    int l = set_line(data, arg_arr[0]);  //index of set on line [line]
 
     //invalid argument [line]
     if (l == -1)

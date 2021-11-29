@@ -1,7 +1,8 @@
-U a adsda b c x y z 
+U a adsda b c x y z
 S a b c x adsda
 S 
 R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
 R 
-C empty 4
-C card 3
+C empty 2    
+C card 3 
+C complement 3 
