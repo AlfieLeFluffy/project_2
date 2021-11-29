@@ -56,31 +56,31 @@ typedef struct{
 } data_t;
 
 //function pointer
-typedef void (*pfunc1)(data_t*, int);               ///PREDELAT NA INT KVULI CHYBAM!!!
-typedef void (*pfunc2)(data_t*, uni_t*, int, int*); ///PREDELAT NA INT KVULI CHYBAM!!!
+typedef int (*pfunc1)(data_t*, int);
+typedef int (*pfunc2)(data_t*, uni_t*, int, int*);
 
 /** function prototypes **/
 //prototypes of command functions because of function pointers
-void set_empty(data_t*, int);
-void set_card(data_t*, int);
-void set_complement(data_t*,uni_t*,int);
-void set_union(data_t*, uni_t*, int, int);
-void set_intersect(data_t*, uni_t*, int, int);
-void set_minus(data_t*, uni_t*, int, int);
-void set_subseteq(data_t*, uni_t*, int, int);
-void set_subset(data_t*, uni_t*, int, int);
-void set_equals(data_t*, uni_t*, int, int);
+int set_empty(data_t*, int);
+int set_card(data_t*, int);
+int set_complement(data_t*,uni_t*,int);
+int set_union(data_t*, uni_t*, int, int);
+int set_intersect(data_t*, uni_t*, int, int);
+int set_minus(data_t*, uni_t*, int, int);
+int set_subseteq(data_t*, uni_t*, int, int);
+int set_subset(data_t*, uni_t*, int, int);
+int set_equals(data_t*, uni_t*, int, int);
 
-void rel_reflexive(data_t*, uni_t*, int);
-void rel_symmetric(data_t*, uni_t*, int);
-void rel_antisymmetric(data_t*, uni_t*, int);
-void rel_transitive(data_t*, uni_t*, int);
-void rel_function(data_t*, uni_t*, int);
-void rel_domain(data_t*, uni_t*, int);
-void rel_codomain(data_t*, uni_t*, int);
-void rel_injective(data_t*, uni_t*, int);
-void rel_surjective(data_t*, uni_t*, int);
-void rel_bijective(data_t*, uni_t*, int);
+int rel_reflexive(data_t*, uni_t*, int);
+int rel_symmetric(data_t*, uni_t*, int);
+int rel_antisymmetric(data_t*, uni_t*, int);
+int rel_transitive(data_t*, uni_t*, int);
+int rel_function(data_t*, uni_t*, int);
+int rel_domain(data_t*, uni_t*, int);
+int rel_codomain(data_t*, uni_t*, int);
+int rel_injective(data_t*, uni_t*, int);
+int rel_surjective(data_t*, uni_t*, int);
+int rel_bijective(data_t*, uni_t*, int);
 
 /** definitions of constants **/
 #define ELEM_LEN 31         //max. allowed length of strings + 1 ... used also for commands (changeable if needed)
@@ -1199,14 +1199,14 @@ bool set_sub(data_t* data, uni_t* uni, int l_a, int l_b)
 
 
 /* prints whether or not is set on line [line] empty  */
-void set_empty(data_t* data, int line)
+int set_empty(data_t* data, int line)
 {
     int l = set_line(data, line);  //index of set on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1214,39 +1214,39 @@ void set_empty(data_t* data, int line)
     if (data->arr_s[l]->length == 0)
     {
         fprintf(stdout, "true\n");
-        return;
+        return 1;
     }
 
     //set has length greater than 0
     fprintf(stdout, "false\n");
-    return;
+    return 1;
 }
 
 /* prints number of elements in set on line [line] */
-void set_card(data_t* data, int line)
+int set_card(data_t* data, int line)
 {
     int l = set_line(data, line);  //index of set on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
     fprintf(stdout, "Set on line %d contains %d elements.\n", line, data->arr_s[l]->length);
-    return;
+    return 1;
 }
 
 /* prints complement of set on line [line] */
-void set_complement(data_t* data, uni_t* uni, int line)
+int set_complement(data_t* data, uni_t* uni, int line)
 {
     int l = set_line(data, line);  //index of set on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1260,11 +1260,11 @@ void set_complement(data_t* data, uni_t* uni, int line)
     }
 
     bool_print(uni, set_comp);
-    return;
+    return 1;
 }
 
 /* prints union of sets on lines [line_a] and [line_b]  */
-void set_union(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_union(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
     int l_b = set_line(data, line_b);  //index of set on line [line_b]
@@ -1272,14 +1272,14 @@ void set_union(data_t* data, uni_t* uni, int line_a, int line_b)
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
-        return;
+        return 0;
     }
 
 
     bool set_uni[uni->length];   //union of sets on lines [line_a] and [line_b]
     bool_reset(uni, set_uni, false);
 
-    //elements contained in sets on line [l] - [line_a] and [line_b]
+    //elements contained in sets on lines [line_a] and [line_b]
     int l = l_a;
     for (int i = 0; i < 2; i++)
     {
@@ -1291,13 +1291,12 @@ void set_union(data_t* data, uni_t* uni, int line_a, int line_b)
         l = l_b;
     }
 
-
     bool_print(uni, set_uni);
-    return;
+    return 1;
 }
 
 /* prints intersect of sets on lines [line_a] and [line_b] */
-void set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
     int l_b = set_line(data, line_b);  //index of set on line [line_b]
@@ -1305,7 +1304,7 @@ void set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1325,13 +1324,12 @@ void set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
         }
     }
 
-
     bool_print(uni, set_int);
-    return;
+    return 1;
 }
 
 /* prints set on line [line_a] minus set on line [line_b]  */
-void set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
     int l_b = set_line(data, line_b);  //index of set on line [line_b]
@@ -1339,7 +1337,7 @@ void set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1359,11 +1357,11 @@ void set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
     }
 
     bool_print(uni, set_min);
-    return;
+    return 1;
 }
 
 /* prints whether or not is set on line [line_a] a subset of set on line [line_b] */
-void set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
     int l_b = set_line(data, line_b);  //index of set on line [line_b]
@@ -1371,7 +1369,7 @@ void set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1379,16 +1377,16 @@ void set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
     if (set_sub(data, uni, l_a, l_b))
     {
         fprintf(stdout, "true\n");
-        return;
+        return 1;
     }
 
     //set on line [line_a] isn't a subset of set on line [line_b]
     fprintf(stdout, "false\n");
-    return;
+    return 1;
 }
 
 /* prints whether or not is set on line [line_a] a proper subset of set on line [line_b] */
-void set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
     int l_b = set_line(data, line_b);  //index of set on line [line_b]
@@ -1396,7 +1394,7 @@ void set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1405,17 +1403,17 @@ void set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
     if (set_sub(data, uni, l_a, l_b) && !set_sub(data, uni, l_b, l_a))
     {
         fprintf(stdout, "true\n");
-        return;
+        return 1;
     }
 
     //set on line [line_a] isn't a subset of set on line [line_b]
     //and/or set on line [line_b] is a subset of set on line [line_a]
     fprintf(stdout, "false\n");
-    return;
+    return 1;
 }
 
 /* prints whether or not are sets on lines [line_a] and [line_b] equal */
-void set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
 {
     int l_a = set_line(data, line_a);  //index of set on line [line_a]
     int l_b = set_line(data, line_b);  //index of set on line [line_b]
@@ -1423,7 +1421,7 @@ void set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1432,13 +1430,13 @@ void set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
     if (set_sub(data, uni, l_a, l_b) && set_sub(data, uni, l_b, l_a))
     {
         fprintf(stdout, "true\n");
-        return;
+        return 1;
     }
 
     //set on line [line_a] isn't a subset of set on line [line_b]
     ///and/or set on line [line_b] isn't a subset of set on line [line_a]
     fprintf(stdout, "false\n");
-    return;
+    return 1;
 }
 
 
@@ -1517,15 +1515,16 @@ bool rel_uh(data_t* data, uni_t* uni, int l, int el)
     return true;
 }
 
+
 /* prints whether or not is the relation on line [line] reflexive */
-void rel_reflexive(data_t* data, uni_t* uni, int line)
+int rel_reflexive(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1556,65 +1555,71 @@ void rel_reflexive(data_t* data, uni_t* uni, int line)
         if (rel_el[i] && !rel_ref[i])
         {
             fprintf(stdout, "false\n");
-            return;
+            return 1;
         }
     }
 
     fprintf(stdout, "true\n");
-    return;
+    return 1;
 }
 
 /* prints whether or not is the relation on line [line] symmetric, TO DO */
-void rel_symmetric(data_t* data, uni_t* uni, int line)
+int rel_symmetric(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
+
     //TO DO
+    return 1;
 }
 
 /* prints whether or not is the relation on line [line] antisymmetric, TO DO */
-void rel_antisymmetric(data_t* data, uni_t* uni, int line)
+int rel_antisymmetric(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
+
     //TO DO
+    return 1;
 }
 
 /* prints whether or not is the relation on line [line] transitive, TO DO */
-void rel_transitive(data_t* data, uni_t* uni, int line)
+int rel_transitive(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
+
     //TO DO
+    return 1;
 }
 
 /* prints whether or not is the relation on line [line] a function */
-void rel_function(data_t* data, uni_t* uni, int line)
+int rel_function(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1622,22 +1627,22 @@ void rel_function(data_t* data, uni_t* uni, int line)
     if (rel_uh(data, uni, l, 1))
     {
         fprintf(stdout, "true\n");
-        return;
+        return 1;
     }
 
     fprintf(stdout, "false\n");
-    return;
+    return 1;
 }
 
 /* prints the domain of the function on line [line] */
-void rel_domain(data_t* data, uni_t* uni, int line)
+int rel_domain(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1645,18 +1650,18 @@ void rel_domain(data_t* data, uni_t* uni, int line)
     rel_elements(data, uni, l, 1, rel_dom);
 
     bool_print(uni, rel_dom);
-    return;
+    return 1;
 }
 
 /* prints the codomain of the function on line [line] */
-void rel_codomain(data_t* data, uni_t* uni, int line)
+int rel_codomain(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1664,18 +1669,18 @@ void rel_codomain(data_t* data, uni_t* uni, int line)
     rel_elements(data, uni, l, 2, rel_cod);
 
     bool_print(uni, rel_cod);
-    return;
+    return 1;
 }
 
 /* prints whether or not is the relation on line [line] injective */
-void rel_injective(data_t* data, uni_t* uni, int line)
+int rel_injective(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
@@ -1683,40 +1688,43 @@ void rel_injective(data_t* data, uni_t* uni, int line)
     if (rel_uh(data, uni, l, 2))
     {
         fprintf(stdout, "true\n");
-        return;
+        return 1;
     }
 
     fprintf(stdout, "false\n");
-    return;
+    return 1;
 }
 
 /* prints whether or not is the relation on line [line] surjective, TO DO */
-void rel_surjective(data_t* data, uni_t* uni, int line)
+int rel_surjective(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
 
     //TO DO
+    return 1;
 }
 
 /* prints whether or not is the relation on line [line] bijective, TO DO */
-void rel_bijective(data_t* data, uni_t* uni, int line)
+int rel_bijective(data_t* data, uni_t* uni, int line)
 {
     int l = rel_line(data, line);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
     {
-        return;
+        return 0;
     }
 
+
     //TO DO
+    return 1;
 }
 
 
@@ -1778,7 +1786,6 @@ int main(int argc, char **argv)
     rel_injective(&data, &uni, 5);
     //rel_surjective(&data, &uni, 4); //TO DO
     //rel_bijective(&data, &uni, 4);  //TO DO
-
 
     ///TEST KONEC
 
