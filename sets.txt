@@ -1,8 +1,16 @@
 U a adsda b c x y z
 S a b c x adsda
 S 
+S y
+S z a      
 R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
 R 
 C empty 3    
 C card 2 
 C complement 3 
+C union 5 5 
+C intersect 2 3
+C minus 2 5
+C subseteq 2 2
+C subset 2 1
+C equals 3 3

@@ -64,12 +64,12 @@ typedef int (*pfunc)(data_t*, int, int*, int);
 int set_empty(data_t*, int, int*, int);
 int set_card(data_t*, int, int*, int);
 int set_complement(data_t*, int, int*, int);
-int set_union(data_t*, uni_t*, int, int);
-int set_intersect(data_t*, uni_t*, int, int);
-int set_minus(data_t*, uni_t*, int, int);
-int set_subseteq(data_t*, uni_t*, int, int);
-int set_subset(data_t*, uni_t*, int, int);
-int set_equals(data_t*, uni_t*, int, int);
+int set_union(data_t*, int, int*, int);
+int set_intersect(data_t*, int, int*, int);
+int set_minus(data_t*, int, int*, int);
+int set_subseteq(data_t*, int, int*, int);
+int set_subset(data_t*, int, int*, int);
+int set_equals(data_t*, int, int*, int);
 
 int rel_reflexive(data_t*, uni_t*, int);
 int rel_symmetric(data_t*, uni_t*, int);
@@ -87,7 +87,6 @@ int rel_bijective(data_t*, uni_t*, int);
 #define LINES_MAX 1000      //max. allowed number of lines in a file
 #define DIGITS_LINES_MAX 5  //digits of LINES_MAX + 1
 #define COM_NUM 19          //number of supported commands
-#define COM_DIFF 2          //number of commands without parameter universe
 #define ARG_MAX 3           //max. number of arguments of any command
 
 //array of names of all supported commands
@@ -98,7 +97,7 @@ const char com_arr_n[COM_NUM][ELEM_LEN] = {
 
 
 //array of function pointers
-const pfunc com_arr_p[COM_NUM - COM_DIFF] = {
+const pfunc com_arr_p[COM_NUM] = {
     &set_empty, &set_card, &set_complement, &set_union, &set_intersect, &set_minus, &set_subseteq, &set_subset, &set_equals,
     &rel_reflexive, &rel_symmetric, &rel_antisymmetric, &rel_transitive, &rel_function, &rel_domain, &rel_codomain, &rel_injective, &rel_surjective, &rel_bijective};
 
@@ -115,16 +114,12 @@ void memory_err()
 {
     fprintf(stderr, "Memory error\n");
 }
-
+ /* prints error for invalid num of args */
 void arg_err(int line)
 {
     fprintf(stderr, "Invalid number of command arguments on line %d\n", line);
 }
 
-void arg_err2()
-{
-    fprintf(stderr, "Invalid number of command arguments\n");
-}
 
 /* function for printing universe */
 void uni_print(uni_t *u)
@@ -1133,7 +1128,15 @@ int file_load(char **argv, data_t *d)
     return 1;
 }
 
-
+/* function checks the number of args given vs the number of expected args */
+int com_arg_check(int expected_args, int arg_count, int lines)
+{
+    if (arg_count != expected_args){
+        arg_err(lines);
+        return 0;
+    }
+    return 1;
+}
 
 /* prints chosen universe elements */
 void bool_print(uni_t* uni, bool* b)
@@ -1241,8 +1244,7 @@ int set_empty(data_t* data, int arg_count, int arg_arr[], int lines)
 /* prints number of elements in set on line [line] */
 int set_card(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    if (arg_count != 1){
-        arg_err(lines);
+    if (com_arg_check(1, arg_count, lines) == 0){
         return 0;
     }
 
@@ -1263,10 +1265,7 @@ int set_card(data_t* data, int arg_count, int arg_arr[], int lines)
 /* prints complement of set on line [line] */
 int set_complement(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    if (arg_count != 1){
-        arg_err(lines);
-        return 0;
-
+    if (com_arg_check(1, arg_count, lines) == 0){
         return 0;
     }
     int l = set_line(data, arg_arr[0]);  //index of set on line [line]
@@ -1292,10 +1291,14 @@ int set_complement(data_t* data, int arg_count, int arg_arr[], int lines)
 }
 
 /* prints union of sets on lines [line_a] and [line_b]  */
-int set_union(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_union(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l_a = set_line(data, line_a);  //index of set on line [line_a]
-    int l_b = set_line(data, line_b);  //index of set on line [line_b]
+    if (com_arg_check(2, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l_a = set_line(data, arg_arr[0]);  //index of set on line [line_a]
+    int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -1303,9 +1306,8 @@ int set_union(data_t* data, uni_t* uni, int line_a, int line_b)
         return 0;
     }
 
-
-    bool set_uni[uni->length];   //union of sets on lines [line_a] and [line_b]
-    bool_reset(uni, set_uni, false);
+    bool set_uni[data->uni.length];   //union of sets on lines [line_a] and [line_b]
+    bool_reset(&(data->uni), set_uni, false);
 
     //elements contained in sets on lines [line_a] and [line_b]
     int l = l_a;
@@ -1319,15 +1321,19 @@ int set_union(data_t* data, uni_t* uni, int line_a, int line_b)
         l = l_b;
     }
 
-    bool_print(uni, set_uni);
+    bool_print(&(data->uni), set_uni);
     return 1;
 }
 
 /* prints intersect of sets on lines [line_a] and [line_b] */
-int set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_intersect(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l_a = set_line(data, line_a);  //index of set on line [line_a]
-    int l_b = set_line(data, line_b);  //index of set on line [line_b]
+    if (com_arg_check(2, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l_a = set_line(data, arg_arr[0]);  //index of set on line [line_a]
+    int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -1336,8 +1342,8 @@ int set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
     }
 
 
-    bool set_int[uni->length];   //intersect of sets on lines [line_a] and [line_b]
-    bool_reset(uni, set_int, false);
+    bool set_int[data->uni.length];   //intersect of sets on lines [line_a] and [line_b]
+    bool_reset(&(data->uni), set_int, false);
 
     //elements contained in both sets on lines [line_a] and [line_b]
     for (int i = 0; i < data->arr_s[l_a]->length; i++)
@@ -1352,15 +1358,20 @@ int set_intersect(data_t* data, uni_t* uni, int line_a, int line_b)
         }
     }
 
-    bool_print(uni, set_int);
+    bool_print(&(data->uni), set_int);
     return 1;
 }
 
 /* prints set on line [line_a] minus set on line [line_b]  */
-int set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_minus(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l_a = set_line(data, line_a);  //index of set on line [line_a]
-    int l_b = set_line(data, line_b);  //index of set on line [line_b]
+    if (com_arg_check(2, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l_a = set_line(data, arg_arr[0]);  //index of set on line [line_a]
+    int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
+
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -1369,8 +1380,8 @@ int set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
     }
 
 
-    bool set_min[uni->length];   //set on line [line_a] minus set on line [line_b]
-    bool_reset(uni, set_min, false);
+    bool set_min[data->uni.length];   //set on line [line_a] minus set on line [line_b]
+    bool_reset(&(data->uni), set_min, false);
 
     //elements contained in set on line [line_a]
     for (int i = 0; i < data->arr_s[l_a]->length; i++)
@@ -1384,15 +1395,19 @@ int set_minus(data_t* data, uni_t* uni, int line_a, int line_b)
         set_min[data->arr_s[l_b]->elem_arr[i]] = false;
     }
 
-    bool_print(uni, set_min);
+    bool_print(&(data->uni), set_min);
     return 1;
 }
 
 /* prints whether or not is set on line [line_a] a subset of set on line [line_b] */
-int set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_subseteq(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l_a = set_line(data, line_a);  //index of set on line [line_a]
-    int l_b = set_line(data, line_b);  //index of set on line [line_b]
+    if (com_arg_check(2, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l_a = set_line(data, arg_arr[0]);  //index of set on line [line_a]
+    int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -1414,10 +1429,14 @@ int set_subseteq(data_t* data, uni_t* uni, int line_a, int line_b)
 }
 
 /* prints whether or not is set on line [line_a] a proper subset of set on line [line_b] */
-int set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_subset(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l_a = set_line(data, line_a);  //index of set on line [line_a]
-    int l_b = set_line(data, line_b);  //index of set on line [line_b]
+    if (com_arg_check(2, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l_a = set_line(data, arg_arr[0]);  //index of set on line [line_a]
+    int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
@@ -1441,10 +1460,15 @@ int set_subset(data_t* data, uni_t* uni, int line_a, int line_b)
 }
 
 /* prints whether or not are sets on lines [line_a] and [line_b] equal */
-int set_equals(data_t* data, uni_t* uni, int line_a, int line_b)
+int set_equals(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l_a = set_line(data, line_a);  //index of set on line [line_a]
-    int l_b = set_line(data, line_b);  //index of set on line [line_b]
+    if (com_arg_check(2, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l_a = set_line(data, arg_arr[0]);  //index of set on line [line_a]
+    int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
+
 
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1)
