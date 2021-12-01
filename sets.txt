@@ -4,7 +4,7 @@ S
 S y
 S z a      
 R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
-R 
+R (a a) (c b) (b b)
 C empty 3    
 C card 2 
 C complement 3 
@@ -14,3 +14,8 @@ C minus 2 5
 C subseteq 2 2
 C subset 2 1
 C equals 3 3
+C reflexive 7
+C function 7
+C injective 6
+C domain 7
+C codomain 7
