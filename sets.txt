@@ -5,7 +5,7 @@ S y
 S z a      
 R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
 R (a a) (c b) (b b) (adsda adsda) (c c) (x x) (y y)
-R (a a) (c b) (b c)
+R (a a) (c b)
 C empty 3    
 C card 2 
 C complement 3 
@@ -17,6 +17,7 @@ C subset 2 1
 C equals 3 3
 C reflexive 8
 C symmetric 8
+C antisymmetric 8
 C function 7
 C injective 6
 C domain 7
