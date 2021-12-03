@@ -4,8 +4,8 @@ S
 S y
 S z a      
 R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
-R (a a) (c b) (b b) (adsda adsda) (c c) (x x) (y y)
-R (a a) (c b)
+R (a a) (c b) (b b) (adsda adsda) (c c) (x x) (y y) (z z)
+R (a a) (b b)
 C empty 3    
 C card 2 
 C complement 3 
@@ -15,9 +15,10 @@ C minus 2 5
 C subseteq 3 3
 C subset 3 3
 C equals 3 3
-C reflexive 8
+C reflexive 7
 C symmetric 8
 C antisymmetric 8
+C transitive 8
 C function 7
 C injective 6
 C domain 7

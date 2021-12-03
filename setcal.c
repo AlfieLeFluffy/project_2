@@ -1588,19 +1588,14 @@ int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-    bool rel_el[data->uni.length];  //all elements from universe
-    bool_reset(&(data->uni), rel_el, false);
+    elpair_t temp_pair;
 
-    //set all universe elements that have relation with each other as true in rel_el
-    for (int j = 0; j < data->arr_r[l]->length; j++) {
-        if (data->arr_r[l]->elem_arr[j].e_1 == data->arr_r[l]->elem_arr[j].e_2) {
-            rel_el[data->arr_r[l]->elem_arr[j].e_1] = true;     //element corresponds with index in rel_el
-        }
-    }
+    for (int i = 0; i < data->uni.length; i++) {
+        temp_pair.e_1 = i;
+        temp_pair.e_2 = i;
 
-    //check if all elements are true
-    for (int i = 0; i < data->uni.length ; i++) {
-        if (rel_el[i] == false) {
+        //find (i i)
+        if (isin_rel(data->arr_r[l], temp_pair) == 0) {
             fprintf(stdout, "false\n");
             return 1;
         }
@@ -1626,29 +1621,20 @@ int rel_symmetric(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-    bool rel_el[data->arr_r[l]->length];  //all elements from relation on line [line]
-    bool_reset(&(data->uni), rel_el, false);
+    elpair_t temp_pair;
 
     //set for all pairs true in rel_el if they have a pair they are symmetric with
     for (int i = 0; i < data->arr_r[l]->length; i++) {
-        if (rel_el[i] == false) {
-            for (int j = i; j < data->arr_r[l]->length; j++) {      //check the rest of relation (start condition because of symmetric diagonal)
-                //if i = (a b) and j = (b a) set true
-                if (data->arr_r[l]->elem_arr[i].e_1 == data->arr_r[l]->elem_arr[j].e_2) {
-                    if (data->arr_r[l]->elem_arr[i].e_2 == data->arr_r[l]->elem_arr[j].e_1) {
-                        rel_el[i] = true;
-                        rel_el[j] = true;
-                        break;
-                    }
-                }
+        //skip diagonal pairs because they are symmetric to themselves
+        if (data->arr_r[l]->elem_arr[i].e_1 != data->arr_r[l]->elem_arr[i].e_2) {
+            temp_pair.e_1 = data->arr_r[l]->elem_arr[i].e_2;
+            temp_pair.e_2 = data->arr_r[l]->elem_arr[i].e_1;
+
+            //for i = (a b) find (b a)
+            if (isin_rel(data->arr_r[l], temp_pair) == 0) {
+                fprintf(stdout, "false\n");
+                return -1;
             }
-        }
-    }
-    //check if the whole relation is symmetric
-    for (int i = 0; i < data->arr_r[l]->length; i++) {
-        if (rel_el[i] == false) {
-            fprintf(stdout, "false\n");
-            return 1;
         }
     }
 
@@ -1672,18 +1658,19 @@ int rel_antisymmetric(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
+    elpair_t temp_pair;
+
     //if pair is not on diagonal and they have a pair they are symmetric with, relation is not antisymmetric
     for (int i = 0; i < data->arr_r[l]->length; i++) {
         //don't check diagonal pairs
         if (data->arr_r[l]->elem_arr[i].e_1 != data->arr_r[l]->elem_arr[i].e_2) {
-            for (int j = i + 1; j < data->arr_r[l]->length; j++) {                  //check the rest of relation
-                //if i = (a b) and j = (b a)
-                if (data->arr_r[l]->elem_arr[i].e_1 == data->arr_r[l]->elem_arr[j].e_2) {
-                    if (data->arr_r[l]->elem_arr[i].e_2 == data->arr_r[l]->elem_arr[j].e_1) {
-                        fprintf(stdout, "false\n");
-                        return 1;
-                    }
-                }
+            temp_pair.e_1 = data->arr_r[l]->elem_arr[i].e_2;
+            temp_pair.e_2 = data->arr_r[l]->elem_arr[i].e_1;
+
+            //for i = (a b) find (b a)
+            if (isin_rel(data->arr_r[l], temp_pair) == 1) {
+                fprintf(stdout, "false\n");
+                return -1;
             }
         }
     }
@@ -1706,6 +1693,28 @@ int rel_transitive(data_t* data, int arg_count, int arg_arr[], int lines)
     if (l == -1)
     {
         return 0;
+    }
+
+    elpair_t temp_pair;
+
+    //check if relation is transitive for each pair
+    for (int i = 0; i < data->arr_r[l]->length; i++) {
+        //don't check diagonal pairs, because they don't generate anything new
+        if (data->arr_r[l]->elem_arr[i].e_1 != data->arr_r[l]->elem_arr[i].e_2) {
+            for (int j = 0; j < data->arr_r[l]->length; j++) {
+                //if i = (? b) and j = (b ??)
+                if (data->arr_r[l]->elem_arr[i].e_2 == data->arr_r[l]->elem_arr[j].e_1) {
+                    temp_pair.e_1 = data->arr_r[l]->elem_arr[i].e_1;
+                    temp_pair.e_2 = data->arr_r[l]->elem_arr[j].e_2;
+
+                    //if (? ??) not found -> relation is not transitive
+                    if (isin_rel(data->arr_r[l], temp_pair) == 0) {
+                        fprintf(stdout, "false\n");
+                        return -1;
+                    }
+                }
+            }
+        }
     }
 
     //else success
@@ -1839,35 +1848,6 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
 /* prints whether or not is the relation on line [line] surjective, TO DO */
 int rel_surjective(data_t* data, uni_t* uni, int line)
 {
-    if (com_arg_check(3, arg_count, lines) == 0){
-        return 0;
-    }
-
-    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
-    int x = set_line(data, arg_arr[1]);
-    int y = set_line(data, arg_arr[2]);
-
-    //invalid argument [line]
-    if (l == -1 || x == -1 || y == -1)
-    {
-        return 0;
-    }
-
-    for (int i = 0; i < data->arr_r[l]->length; i++){
-        //check if x is an element of the x set
-        if (isin_set(*(data->arr_s[x]), data->arr_r[l]->elem_arr[i].e_1) == 0){
-            fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
-            return 0;
-        }
-
-        //check if y is an element of the y set
-        if (isin_set(*(data->arr_s[y]), data->arr_r[l]->elem_arr[i].e_2) == 0){
-            fprintf(stderr, "Relation's y value is not an element of set defining y values (line: %d)\n", lines);
-            return 0;
-        }
-    }
-
-
 
     //TO DO
     return 1;
