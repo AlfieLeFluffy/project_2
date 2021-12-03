@@ -2,8 +2,8 @@ U a adsda b c x y z
 S a b c x adsda
 S 
 S y
-S z a      
-R (b a) (x c) (adsda c) (c c)   (z c) (z   z)
+S a b     
+R (b a) (x c) (adsda b) (c adsda) (a x)
 R (a a) (c b) (b b) (adsda adsda) (c c) (x x) (y y) (z z)
 R (a a) (b b)
 C empty 3    
@@ -20,6 +20,8 @@ C symmetric 8
 C antisymmetric 8
 C transitive 8
 C function 7
-C injective 6
 C domain 7
 C codomain 7
+C injective 6 1 1
+C surjective 8 5 5
+C bijective 6 2 2

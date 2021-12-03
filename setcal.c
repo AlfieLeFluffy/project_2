@@ -2,10 +2,15 @@
  *
  * setcal.c
  *
- * ver 0.5
+ * ver 1.0
  * =========================
  *
- * 29.11.2021
+ * 03.12.2021
+ *
+ * xjobra01
+ * xsopfo00
+ * xvasak01
+ * xvlach24
  *
  *******************************/
 
@@ -79,8 +84,8 @@ int rel_function(data_t*, int, int*, int);
 int rel_domain(data_t*, int, int*, int);
 int rel_codomain(data_t*, int, int*, int);
 int rel_injective(data_t*, int, int*, int);
-int rel_surjective(data_t*, uni_t*, int);
-int rel_bijective(data_t*, uni_t*, int);
+int rel_surjective(data_t*, int, int*, int);
+int rel_bijective(data_t*, int, int*, int);
 
 /** definitions of constants **/
 #define ELEM_LEN 31         //max. allowed length of strings + 1 ... used also for commands (changeable if needed)
@@ -1590,6 +1595,7 @@ int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
 
     elpair_t temp_pair;
 
+    //find a reflexive element for each element in universe
     for (int i = 0; i < data->uni.length; i++) {
         temp_pair.e_1 = i;
         temp_pair.e_2 = i;
@@ -1597,7 +1603,7 @@ int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
         //find (i i)
         if (isin_rel(data->arr_r[l], temp_pair) == 0) {
             fprintf(stdout, "false\n");
-            return 1;
+            return -1;
         }
     }
 
@@ -1781,7 +1787,7 @@ int rel_codomain(data_t* data, int arg_count, int arg_arr[], int lines)
 
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
-    //invalid argument [line]
+    //invalid argument
     if (l == -1)
     {
         return 0;
@@ -1795,6 +1801,46 @@ int rel_codomain(data_t* data, int arg_count, int arg_arr[], int lines)
     return 1;
 }
 
+/* are all of of relation's elements x/y values part of sets defining x/y */
+int rel_elems_in_sets(rel_t *r, set_t *sx, set_t *sy, int lines) ///MAYBE BUDE FALSE MISTO ERROR, zalezi co rekne pan doktor
+{
+    for (int i = 0; i < r->length; i++){
+        //check if x is an element of the x set
+        if (isin_set(*sx, r->elem_arr[i].e_1) == 0){
+            fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
+            return 0;
+        }
+
+        //check if y is an element of the y set
+        if (isin_set(*sy, r->elem_arr[i].e_2) == 0){
+            fprintf(stderr, "Relation's y value is not an element of set defining y values (line: %d)\n", lines);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* decides if relation on line l, defined by sets on lines x and y is injective */
+int inj(data_t *data, int l, int x, int y, int lines)
+{
+    if (rel_elems_in_sets(data->arr_r[l], data->arr_s[x], data->arr_s[y], lines) == 0) {
+        return 0;
+    }
+
+    //x values aren't in relation on line [line] more than once (injective has to be a function)
+    if (!rel_uh(data, l, 1))
+    {
+        return -1;
+    }
+
+    //y values aren't in relation on line [line] more than once
+    if (!rel_uh(data, l, 2))
+    {
+        return -1;
+    }
+    return 1;
+}
+
 /* prints whether or not is the relation on line [line] injective */
 int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
 {
@@ -1802,71 +1848,118 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
-    int x = set_line(data, arg_arr[1]);
-    int y = set_line(data, arg_arr[2]);
+    int l = rel_line(data, arg_arr[0]);  //index of relation
+    int x = set_line(data, arg_arr[1]);  //index of set defining x values
+    int y = set_line(data, arg_arr[2]);  //index of set defining y values
 
-    //invalid argument [line]
+    //invalid argument
+    if (l == -1 || x == -1 || y == -1)
+    {
+        return 0;
+    }
+    //return value of inj is stored in check in order to check it multiple times
+    int check = inj(data, l, x, y, lines);
+    if (check == 0){
+        return 0;
+    }
+    if (check == 1){
+        fprintf(stdout, "true\n");
+        return 1;
+    }
+    fprintf(stdout, "false\n");
+    return 1;
+}
+
+/* decides if relation on line l, defined by sets on lines x and y is surjective */
+int surj(data_t *data, int l, int x, int y, int lines)
+{
+    if (rel_elems_in_sets(data->arr_r[l], data->arr_s[x], data->arr_s[y], lines) == 0) {
+        return 0;
+    }
+    //bool array for marking which elements were seen in relation as a y value
+    bool set_arr[data->arr_s[y]->length];
+    for (int i = 0; i < data->arr_s[y]->length; i++){
+        set_arr[i] = false;
+    }
+
+    //trying to find an element equal to each y value of relation
+    for (int i = 0; i < data->arr_r[l]->length; i++){
+        for (int j = 0; j < data->arr_s[y]->length; j++){
+            if (data->arr_r[l]->elem_arr[i].e_2 == data->arr_s[y]->elem_arr[j]){
+                set_arr[j] = true;  //mark found element in array
+                break;
+            }
+        }
+    }
+
+    //if false value is found, element of set was not used in relation as a y value -> not surjective
+    for (int i = 0; i < data->arr_s[y]->length; i++){
+        if (!set_arr[i]){
+            return -1;
+        }
+    }
+    return 1;
+
+}
+
+/* prints whether or not is a relation surjective */
+int rel_surjective(data_t* data, int arg_count, int arg_arr[], int lines)
+{
+    if (com_arg_check(3, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
+    int x = set_line(data, arg_arr[1]);  //index of set defining x values
+    int y = set_line(data, arg_arr[2]);  //index of set defining y values
+
+    //invalid argument
     if (l == -1 || x == -1 || y == -1)
     {
         return 0;
     }
 
-    for (int i = 0; i < data->arr_r[l]->length; i++){
-        //check if x is an element of the x set
-        if (isin_set(*(data->arr_s[x]), data->arr_r[l]->elem_arr[i].e_1) == 0){
-            fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
-            return 0;
-        }
-
-        //check if y is an element of the y set
-        if (isin_set(*(data->arr_s[y]), data->arr_r[l]->elem_arr[i].e_2) == 0){
-            fprintf(stderr, "Relation's y value is not an element of set defining y values (line: %d)\n", lines);
-            return 0;
-        }
+    //return value of inj is stored in check in order to check it multiple times
+    int check = surj(data, l, x, y, lines);
+    if (check == 0){
+        return 0;
     }
-
-
-    //x values aren't in relation on line [line] more than once (injective has to be a function)
-    if (!rel_uh(data, l, 1))
-    {
-        fprintf(stdout, "false\n");
-        return -1;
+    if (check == 1){
+        fprintf(stdout, "true\n");
+        return 1;
     }
-
-    //y values aren't in relation on line [line] more than once
-    if (!rel_uh(data, l, 2))
-    {
-        fprintf(stdout, "false\n");
-        return -1;
-    }
-
-    fprintf(stdout, "true\n");
-    return 1;
-}
-
-/* prints whether or not is the relation on line [line] surjective, TO DO */
-int rel_surjective(data_t* data, uni_t* uni, int line)
-{
-
-    //TO DO
+    fprintf(stdout, "false\n");
     return 1;
 }
 
 /* prints whether or not is the relation on line [line] bijective, TO DO */
-int rel_bijective(data_t* data, uni_t* uni, int line)
+int rel_bijective(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l = rel_line(data, line);  //index of relation on line [line]
+    if (com_arg_check(3, arg_count, lines) == 0){
+        return 0;
+    }
 
-    //invalid argument [line]
-    if (l == -1)
+    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
+    int x = set_line(data, arg_arr[1]);  //index of set defining x values
+    int y = set_line(data, arg_arr[2]);  //index of set defining y values
+
+    //invalid argument
+    if (l == -1 || x == -1 || y == -1)
     {
         return 0;
     }
 
-
-    //TO DO
-    return 1;
+    int checkinj = inj(data, l, x, y, lines);
+    int checksurj = surj(data, l, x, y, lines);
+    if(checkinj == 0 || checksurj == 0){
+        return 0;
+    }
+    if (checkinj == 1 && checksurj == 1){
+        fprintf(stdout, "true\n");
+        return 1;
+    }
+    fprintf(stdout, "false\n");
+    return -1;
 }
 
 
@@ -1877,42 +1970,13 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    //uni_t uni;
     data_t data;
-
     data_create(&data);
 
     //open file and load its content
     if (file_load(argv, &data) == 0) {
         return EXIT_FAILURE;
     }
-
-    ///TEST
-
-    /*set_empty(&data, 4);
-    set_card(&data, 2);
-    set_complement(&data, &uni, 1);
-    set_union(&data, &uni, 2, 3);
-    set_intersect(&data, &uni, 1, 3);
-    set_minus(&data, &uni, 2, 3);
-    set_subseteq(&data, &uni, 2, 3);
-    set_subset(&data, &uni, 3, 2);
-    set_equals(&data, &uni, 2, 3);*/
-
-
-
-    //rel_reflexive(&data, &(data.uni), 5);
-    //rel_symmetric(&data, &uni, 4);
-    //rel_antisymmetric(&data, &uni, 4);
-    //rel_transitive(&data, &uni, 4);
-    //rel_function(&data, &(data.uni), 4);
-    //rel_domain(&data, &(data.uni), 4);
-    //rel_codomain(&data, &(data.uni), 4);
-    //rel_injective(&data, &(data.uni), 5);
-    //rel_surjective(&data, &uni, 4); //TO DO
-    //rel_bijective(&data, &uni, 4);  //TO DO
-
-    ///TEST KONEC
 
     //memory deallocation
     destroy_all(&data, &(data.uni));
