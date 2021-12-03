@@ -1540,7 +1540,7 @@ void rel_elements(data_t* data, int l, int el, bool* rel)
     return;
 }
 
-/* prints whether or not is the relation on line [line] reflexive */
+/* function for determining if an x or y value of a relation is not repeated */
 bool rel_uh(data_t* data, int l, int el)
 {
     bool rel_el[data->uni.length];  //chosen values from relation on line [line]
@@ -1764,23 +1764,51 @@ int rel_codomain(data_t* data, int arg_count, int arg_arr[], int lines)
 /* prints whether or not is the relation on line [line] injective */
 int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
 {
+    if (com_arg_check(3, arg_count, lines) == 0){
+        return 0;
+    }
+
+    bool found = false;
+
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
+    int x = set_line(data, arg_arr[1]);
+    int y = set_line(data, arg_arr[2]);
 
     //invalid argument [line]
-    if (l == -1)
+    if (l == -1 || x == -1 || y == -1)
     {
         return 0;
     }
 
+    for (int i = 0; i < data->arr_r[l]->length; i++){
+        for (int j = 0; j < data->arr_s[x]->length; i++){
+            if (data->arr_r[l]->elem_arr[i].e_1 == data->arr_s[x]->elem_arr[j]){
+                found = true;
+                break;
+            }
+        }
+        if (!found){
+            fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
+            return 0;
+        }
+    }
+
+
+    //x values aren't in relation on line [line] more than once (injective has to be a function)
+    if (!rel_uh(data, l, 1))
+    {
+        fprintf(stdout, "false\n");
+        return 1;
+    }
 
     //y values aren't in relation on line [line] more than once
     if (rel_uh(data, l, 2))
     {
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "false\n");
         return 1;
     }
 
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "true\n");
     return 1;
 }
 
