@@ -72,7 +72,7 @@ int set_subset(data_t*, int, int*, int);
 int set_equals(data_t*, int, int*, int);
 
 int rel_reflexive(data_t*, int, int*, int);
-int rel_symmetric(data_t*, uni_t*, int);
+int rel_symmetric(data_t*, int, int*, int);
 int rel_antisymmetric(data_t*, uni_t*, int);
 int rel_transitive(data_t*, uni_t*, int);
 int rel_function(data_t*, int, int*, int);
@@ -1573,7 +1573,6 @@ bool rel_uh(data_t* data, int l, int el)
     return true;
 }
 
-
 /* prints whether or not is the relation on line [line] reflexive */
 int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
 {
@@ -1589,10 +1588,10 @@ int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-    bool rel_el[data->uni.length];  //all elements from relation on line [line]
+    bool rel_el[data->uni.length];  //all elements from universe
     bool_reset(&(data->uni), rel_el, false);
 
-    //set true to all universe elements that have relation with each other
+    //set all universe elements that have relation with each other as true in rel_el
     for (int j = 0; j < data->arr_r[l]->length; j++) {
         if (data->arr_r[l]->elem_arr[j].e_1 == data->arr_r[l]->elem_arr[j].e_2) {
             rel_el[data->arr_r[l]->elem_arr[j].e_1] = true;     //element corresponds with index in rel_el
@@ -1611,10 +1610,14 @@ int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
     return 1;
 }
 
-/* prints whether or not is the relation on line [line] symmetric, TO DO */
-int rel_symmetric(data_t* data, uni_t* uni, int line)
+/* prints whether or not is the relation on line [line] symmetric */
+int rel_symmetric(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l = rel_line(data, line);  //index of relation on line [line]
+    if (com_arg_check(1, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
@@ -1622,8 +1625,34 @@ int rel_symmetric(data_t* data, uni_t* uni, int line)
         return 0;
     }
 
+    bool rel_el[data->arr_r[l]->length];  //all elements from relation on line [line]
+    bool_reset(&(data->uni), rel_el, false);
 
-    //TO DO
+    //set for all pairs true in rel_el if they have a pair they are symmetric with
+    for (int i = 0; i < data->arr_r[l]->length; i++) {
+        if (rel_el[i] == false) {
+            for (int j = i; j < data->arr_r[l]->length; j++) {      //start condition because of symmetric diagonal
+                //if i = (a b) and j = (b a) set true
+                if (data->arr_r[l]->elem_arr[i].e_1 == data->arr_r[l]->elem_arr[j].e_2) {
+                    if (data->arr_r[l]->elem_arr[i].e_2 == data->arr_r[l]->elem_arr[j].e_1) {
+                        rel_el[i] = true;
+                        rel_el[j] = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    //check if the whole relation is symmetric
+    for (int i = 0; i < data->arr_r[l]->length; i++) {
+        if (rel_el[i] == false) {
+            fprintf(stdout, "false\n");
+            return 1;
+        }
+    }
+
+    fprintf(stdout, "true\n");
     return 1;
 }
 
@@ -1820,7 +1849,7 @@ int main(int argc, char *argv[])
 
 
     //rel_reflexive(&data, &(data.uni), 5);
-    //rel_symmetric(&data, &uni, 4);  //TO DO
+    //rel_symmetric(&data, &uni, 4);
     //rel_antisymmetric(&data, &uni, 4);  //TO DO
     //rel_transitive(&data, &uni, 4); //TO DO
     //rel_function(&data, &(data.uni), 4);
