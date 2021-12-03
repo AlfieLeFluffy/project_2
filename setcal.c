@@ -1793,7 +1793,55 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-    bool found = false;
+    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
+    int x = set_line(data, arg_arr[1]);
+    int y = set_line(data, arg_arr[2]);
+
+    //invalid argument [line]
+    if (l == -1 || x == -1 || y == -1)
+    {
+        return 0;
+    }
+
+    for (int i = 0; i < data->arr_r[l]->length; i++){
+        //check if x is an element of the x set
+        if (isin_set(*(data->arr_s[x]), data->arr_r[l]->elem_arr[i].e_1) == 0){
+            fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
+            return 0;
+        }
+
+        //check if y is an element of the y set
+        if (isin_set(*(data->arr_s[y]), data->arr_r[l]->elem_arr[i].e_2) == 0){
+            fprintf(stderr, "Relation's y value is not an element of set defining y values (line: %d)\n", lines);
+            return 0;
+        }
+    }
+
+
+    //x values aren't in relation on line [line] more than once (injective has to be a function)
+    if (!rel_uh(data, l, 1))
+    {
+        fprintf(stdout, "false\n");
+        return -1;
+    }
+
+    //y values aren't in relation on line [line] more than once
+    if (!rel_uh(data, l, 2))
+    {
+        fprintf(stdout, "false\n");
+        return -1;
+    }
+
+    fprintf(stdout, "true\n");
+    return 1;
+}
+
+/* prints whether or not is the relation on line [line] surjective, TO DO */
+int rel_surjective(data_t* data, uni_t* uni, int line)
+{
+    if (com_arg_check(3, arg_count, lines) == 0){
+        return 0;
+    }
 
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
     int x = set_line(data, arg_arr[1]);
@@ -1806,47 +1854,19 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
     }
 
     for (int i = 0; i < data->arr_r[l]->length; i++){
-        for (int j = 0; j < data->arr_s[x]->length; i++){
-            if (data->arr_r[l]->elem_arr[i].e_1 == data->arr_s[x]->elem_arr[j]){
-                found = true;
-                break;
-            }
-        }
-        if (!found){
+        //check if x is an element of the x set
+        if (isin_set(*(data->arr_s[x]), data->arr_r[l]->elem_arr[i].e_1) == 0){
             fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
+            return 0;
+        }
+
+        //check if y is an element of the y set
+        if (isin_set(*(data->arr_s[y]), data->arr_r[l]->elem_arr[i].e_2) == 0){
+            fprintf(stderr, "Relation's y value is not an element of set defining y values (line: %d)\n", lines);
             return 0;
         }
     }
 
-
-    //x values aren't in relation on line [line] more than once (injective has to be a function)
-    if (!rel_uh(data, l, 1))
-    {
-        fprintf(stdout, "false\n");
-        return 1;
-    }
-
-    //y values aren't in relation on line [line] more than once
-    if (rel_uh(data, l, 2))
-    {
-        fprintf(stdout, "false\n");
-        return 1;
-    }
-
-    fprintf(stdout, "true\n");
-    return 1;
-}
-
-/* prints whether or not is the relation on line [line] surjective, TO DO */
-int rel_surjective(data_t* data, uni_t* uni, int line)
-{
-    int l = rel_line(data, line);  //index of relation on line [line]
-
-    //invalid argument [line]
-    if (l == -1)
-    {
-        return 0;
-    }
 
 
     //TO DO
