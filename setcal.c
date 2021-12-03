@@ -1589,33 +1589,19 @@ int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-
     bool rel_el[data->uni.length];  //all elements from relation on line [line]
     bool_reset(&(data->uni), rel_el, false);
 
-    for (int i = 0; i < data->arr_r[l]->length; i++)
-    {
-        rel_el[data->arr_r[l]->elem_arr[i].e_1] = true;
-        rel_el[data->arr_r[l]->elem_arr[i].e_2] = true;
-    }
-
-    bool rel_ref[data->uni.length];   //reflexive elements in relation on line [line]
-    bool_reset(&(data->uni), rel_ref, false);
-
-    for (int i = 0; i < data->arr_r[l]->length; i++)
-    {
-        if (data->arr_r[l]->elem_arr[i].e_1 == data->arr_r[l]->elem_arr[i].e_2)
-        {
-            rel_ref[data->arr_r[l]->elem_arr[i].e_1] = true;
+    //set true to all universe elements that have relation with each other
+    for (int j = 0; j < data->arr_r[l]->length; j++) {
+        if (data->arr_r[l]->elem_arr[j].e_1 == data->arr_r[l]->elem_arr[j].e_2) {
+            rel_el[data->arr_r[l]->elem_arr[j].e_1] = true;     //element corresponds with index in rel_el
         }
     }
 
-    //checks if all elements of relation on line [line] are reflexive
-    for (int i = 0; i < data->uni.length; i++)
-    {
-        //an element isn't reflexive
-        if (rel_el[i] && !rel_ref[i])
-        {
+    //check if all elements are true
+    for (int i = 0; i < data->uni.length ; i++) {
+        if (rel_el[i] == false) {
             fprintf(stdout, "false\n");
             return 1;
         }
