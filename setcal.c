@@ -1540,7 +1540,7 @@ void rel_elements(data_t* data, int l, int el, bool* rel)
     return;
 }
 
-/* TO DO: vymyslet nazev a popis */
+/* prints whether or not is the relation on line [line] reflexive */
 bool rel_uh(data_t* data, int l, int el)
 {
     bool rel_el[data->uni.length];  //chosen values from relation on line [line]
