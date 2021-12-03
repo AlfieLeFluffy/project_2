@@ -74,7 +74,7 @@ int set_equals(data_t*, int, int*, int);
 int rel_reflexive(data_t*, int, int*, int);
 int rel_symmetric(data_t*, int, int*, int);
 int rel_antisymmetric(data_t*, int, int*, int);
-int rel_transitive(data_t*, uni_t*, int);
+int rel_transitive(data_t*, int, int*, int);
 int rel_function(data_t*, int, int*, int);
 int rel_domain(data_t*, int, int*, int);
 int rel_codomain(data_t*, int, int*, int);
@@ -1469,7 +1469,7 @@ int set_subset(data_t* data, int arg_count, int arg_arr[], int lines)
 
 
     //set on line [line_a] is a subset of set on line [line_b]
-    ///and set on line [line_b] isn't a subset of set on line [line_a]
+    //and set on line [line_b] isn't a subset of set on line [line_a]
     if (set_sub(data, l_a, l_b) && !set_sub(data, l_b, l_a))
     {
         fprintf(stdout, "true\n");
@@ -1644,7 +1644,6 @@ int rel_symmetric(data_t* data, int arg_count, int arg_arr[], int lines)
             }
         }
     }
-
     //check if the whole relation is symmetric
     for (int i = 0; i < data->arr_r[l]->length; i++) {
         if (rel_el[i] == false) {
@@ -1694,10 +1693,14 @@ int rel_antisymmetric(data_t* data, int arg_count, int arg_arr[], int lines)
     return 1;
 }
 
-/* prints whether or not is the relation on line [line] transitive, TO DO */
-int rel_transitive(data_t* data, uni_t* uni, int line)
+/* prints whether or not is the relation on line [line] transitive */
+int rel_transitive(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    int l = rel_line(data, line);  //index of relation on line [line]
+    if (com_arg_check(1, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument [line]
     if (l == -1)
@@ -1705,8 +1708,8 @@ int rel_transitive(data_t* data, uni_t* uni, int line)
         return 0;
     }
 
-
-    //TO DO
+    //else success
+    fprintf(stdout, "true\n");
     return 1;
 }
 
@@ -1901,7 +1904,7 @@ int main(int argc, char *argv[])
     //rel_reflexive(&data, &(data.uni), 5);
     //rel_symmetric(&data, &uni, 4);
     //rel_antisymmetric(&data, &uni, 4);
-    //rel_transitive(&data, &uni, 4); //TO DO
+    //rel_transitive(&data, &uni, 4);
     //rel_function(&data, &(data.uni), 4);
     //rel_domain(&data, &(data.uni), 4);
     //rel_codomain(&data, &(data.uni), 4);

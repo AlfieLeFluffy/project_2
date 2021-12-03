@@ -12,8 +12,8 @@ C complement 3
 C union 5 5 
 C intersect 2 3
 C minus 2 5
-C subseteq 2 2
-C subset 2 1
+C subseteq 3 3
+C subset 3 3
 C equals 3 3
 C reflexive 8
 C symmetric 8
