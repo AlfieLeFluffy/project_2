@@ -2,10 +2,10 @@
  *
  * setcal.c
  *
- * ver 1.0
+ * ver 1.1
  * =========================
  *
- * 03.12.2021
+ * 04.12.2021
  *
  * xjobra01
  * xsopfo00
@@ -128,14 +128,21 @@ void arg_err(int line)
 /* function for printing universe */
 void uni_print(uni_t *u)
 {
-    fprintf(stdout, "U ");
+    fprintf(stdout, "U");
+    if (u->length == 0) {
+        fprintf(stdout, "\n");
+        return;
+	}
+	fprintf(stdout, " ");
+
     for (int i = 0; i < u->length; i++) {
-        fprintf(stdout, "%s ", u->elem_arr[i]);
+        if (i == u->length - 1) {
+            fprintf(stdout, "%s\n", u->elem_arr[i]);
+        }
+        else {
+            fprintf(stdout, "%s ", u->elem_arr[i]);
+        }
     }
-
-    fprintf(stdout, "                                     ***line: %d elements: %d***", 1 , u->length);        ///DELETE LATER
-
-    fprintf(stdout, "\n");
 }
 
 /* find set defined on line [line] */
@@ -160,14 +167,21 @@ void set_print(data_t *d, int line)
 {
 	set_t *s = d->arr_s[set_line(d, line)];
 
-	fprintf(stdout, "S ");
-	for(int i = 0; i < s->length; i++){
-		fprintf(stdout, "%s ", d->uni.elem_arr[s->elem_arr[i]]);
+	fprintf(stdout, "S");
+	if (s->length == 0) {
+        fprintf(stdout, "\n");
+        return;
 	}
+	fprintf(stdout, " ");
 
-	fprintf(stdout, "                                     ***line: %d elements: %d***", s->line, s->length);        ///DELETE LATER
-
-	fprintf(stdout, "\n");
+	for(int i = 0; i < s->length; i++){
+		if (i == s->length - 1) {
+            fprintf(stdout, "%s\n", d->uni.elem_arr[s->elem_arr[i]]);
+        }
+        else {
+            fprintf(stdout, "%s ", d->uni.elem_arr[s->elem_arr[i]]);
+        }
+	}
 }
 
 /* find relation defined on line [line] */
@@ -192,14 +206,21 @@ void rel_print(data_t *d, int line)
 {
     rel_t *r = d->arr_r[rel_line(d, line)];
 
-    fprintf(stdout, "R ");
-	for(int i = 0; i < r->length; i++){
-		fprintf(stdout, "(%s %s) ", d->uni.elem_arr[r->elem_arr[i].e_1], d->uni.elem_arr[r->elem_arr[i].e_2] );
+    fprintf(stdout, "R");
+	if (r->length == 0) {
+        fprintf(stdout, "\n");
+        return;
 	}
+	fprintf(stdout, " ");
 
-	fprintf(stdout, "                                     ***line: %d elements: %d***", r->line, r->length);        ///DELETE LATER
-
-	fprintf(stdout, "\n");
+	for(int i = 0; i < r->length; i++){
+		if (i == r->length - 1) {
+            fprintf(stdout, "(%s %s)\n", d->uni.elem_arr[r->elem_arr[i].e_1], d->uni.elem_arr[r->elem_arr[i].e_2] );
+        }
+        else {
+            fprintf(stdout, "(%s %s) ", d->uni.elem_arr[r->elem_arr[i].e_1], d->uni.elem_arr[r->elem_arr[i].e_2] );
+        }
+	}
 }
 
 /* function for universe initialization */
@@ -526,12 +547,9 @@ int is_keyword(char str[])
     return 0;
 }
 
-/* function for loading a line as universe */ ///TODO is_keyword(char str[])
+/* function for loading a line as universe */
 int load_uni(FILE *fp, uni_t *u)
 {
-    //initialize universe
-    uni_create(u);
-
     char temp_s[ELEM_LEN];
     char c;
     int len;
@@ -670,11 +688,15 @@ int load_set(FILE *fp, data_t *d, int line)
 
         //if load_str returns 0 (=error), return 0
         if (c == 0){
+            set_destroy(s);
+            free(s);
             return 0;
         }
 
         //load element to set
         if (elem_to_s(&(d->uni), s, temp_s, line) == 0) {
+            set_destroy(s);
+            free(s);
             return 0;
         }
 
@@ -857,11 +879,15 @@ int load_rel(FILE *fp, data_t *d, int line)
     do {
         //check, if load_str() finished successfully
         if ((c = load_str_r(fp, temp_s1, temp_s2, line)) == 0) {
+            rel_destroy(r);
+            free(r);
             return 0;
         }
 
         //load pair to relation
         if ((pair_to_r(&(d->uni), r, temp_s1, temp_s2, line)) == 0) {
+            rel_destroy(r);
+            free(r);
             return 0;
         }
     } while( c != '\n');
@@ -960,7 +986,7 @@ int do_com(data_t *d, int com_i,int arg_count, int arg_arr[], int line)     ///P
 */
 
 /* function for loading and executing command from file */
-int load_com(FILE *fp, data_t *d, int line)       ///KONTROLNI PRINTY ///pridat predani poli com, pokud nebudou globalni const!!
+int load_com(FILE *fp, data_t *d, int line)
 {
     char com[ELEM_LEN];
     int len;
@@ -996,11 +1022,6 @@ int load_com(FILE *fp, data_t *d, int line)       ///KONTROLNI PRINTY ///pridat 
         return 0;
     }
 
-    printf("===== TEST COM =====\n");                                                      ///SMAZAT!!!!!!!!!!!
-    printf("C %s %d %d %d\n", com, arg_arr[0], arg_arr[1], arg_arr[2]);
-    printf("arg num = %d\n", arg_count);
-    printf("== END OF TEST COM ==\n\n");
-
     //execute commands
     if ( (*com_arr_p[com_i])(d, arg_count, arg_arr, line) == 0 ){
         return 0;
@@ -1027,10 +1048,10 @@ int caseU(FILE *fp, data_t *d, int lines)
         fprintf(stderr, "Universe on an unexpected line (line %d)\n", lines);
         return 0;
     }
-
+    /*
     if (is_space(fp, lines) == 0){
         return 0;
-    }
+    }*/
 
     //load universe from line
     if (load_uni(fp, &(d->uni)) == 0){
@@ -1054,10 +1075,10 @@ int caseS(FILE *fp, data_t *d, int lines)
         fprintf(stderr, "Universe expected on line 1 instead of set\n");
         return 0;
     }
-
+    /*
     if (is_space(fp, lines) == 0){
         return 0;
-    }
+    }*/
 
     //load set into data
     if (load_set(fp, d, lines) == 0) {
@@ -1077,10 +1098,10 @@ int caseR(FILE *fp, data_t *d, int lines)
         fprintf(stderr, "Universe expected on line 1 instead of relation\n");
         return 0;
     }
-
+    /*
     if (is_space(fp, lines) == 0){
         return 0;
-    }
+    }*/
     //load relation into data
     if (load_rel(fp, d, lines) == 0) {
         return 0;
@@ -1098,10 +1119,10 @@ int caseC(FILE *fp, data_t *d, int lines)
         fprintf(stderr, "Universe expected on line 1 instead of command\n");
         return 0;
     }
-
+    /*
     if (is_space(fp, lines) == 0){
         return 0;
-    }
+    }*/
 
     //load and execute command
     if (load_com(fp, d, lines) == 0) {
@@ -1113,7 +1134,7 @@ int caseC(FILE *fp, data_t *d, int lines)
 }
 
 /* function for loading setcal-formatted text from a file */
-int text_load(FILE *fp, data_t *d)     ///TODO commands
+int text_load(FILE *fp, data_t *d)
 {
     //read file by lines
     for (int lines = 1; lines <= LINES_MAX + 1; lines++) {
@@ -1266,7 +1287,7 @@ int set_empty(data_t* data, int arg_count, int arg_arr[], int lines)
 
     //set has length greater than 0
     fprintf(stdout, "false\n");
-    return 1;
+    return -1;
 }
 
 /* prints number of elements in set on line [line] */
@@ -1285,8 +1306,7 @@ int set_card(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-
-    fprintf(stdout, "Set on line %d contains %d elements.\n", l, data->arr_s[l]->length);
+    fprintf(stdout, "%d\n", data->arr_s[l]->length);
     return 1;
 }
 
@@ -1453,7 +1473,7 @@ int set_subseteq(data_t* data, int arg_count, int arg_arr[], int lines)
 
     //set on line [line_a] isn't a subset of set on line [line_b]
     fprintf(stdout, "false\n");
-    return 1;
+    return -1;
 }
 
 /* prints whether or not is set on line [line_a] a proper subset of set on line [line_b] */
@@ -1484,7 +1504,7 @@ int set_subset(data_t* data, int arg_count, int arg_arr[], int lines)
     //set on line [line_a] isn't a subset of set on line [line_b]
     //and/or set on line [line_b] is a subset of set on line [line_a]
     fprintf(stdout, "false\n");
-    return 1;
+    return -1;
 }
 
 /* prints whether or not are sets on lines [line_a] and [line_b] equal */
@@ -1516,7 +1536,7 @@ int set_equals(data_t* data, int arg_count, int arg_arr[], int lines)
     //set on line [line_a] isn't a subset of set on line [line_b]
     ///and/or set on line [line_b] isn't a subset of set on line [line_a]
     fprintf(stdout, "false\n");
-    return 1;
+    return -1;
 }
 
 
@@ -1545,8 +1565,8 @@ void rel_elements(data_t* data, int l, int el, bool* rel)
     return;
 }
 
-/* function for determining if an x or y value of a relation is not repeated */
-bool rel_uh(data_t* data, int l, int el)
+/* function for determining if an x or y value of a relation is not duplicated */
+bool rel_dupl(data_t* data, int l, int el)
 {
     bool rel_el[data->uni.length];  //chosen values from relation on line [line]
     bool_reset(&(data->uni), rel_el, false);
@@ -1745,7 +1765,7 @@ int rel_function(data_t* data, int arg_count, int arg_arr[], int lines)
 
 
     //x values aren't in relation on line [line] more than once
-    if (rel_uh(data, l, 1))
+    if (rel_dupl(data, l, 1))
     {
         fprintf(stdout, "true\n");
         return 1;
@@ -1807,13 +1827,13 @@ int rel_elems_in_sets(rel_t *r, set_t *sx, set_t *sy, int lines) ///MAYBE BUDE F
     for (int i = 0; i < r->length; i++){
         //check if x is an element of the x set
         if (isin_set(*sx, r->elem_arr[i].e_1) == 0){
-            fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
+            ///fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
             return 0;
         }
 
         //check if y is an element of the y set
         if (isin_set(*sy, r->elem_arr[i].e_2) == 0){
-            fprintf(stderr, "Relation's y value is not an element of set defining y values (line: %d)\n", lines);
+            ///fprintf(stderr, "Relation's y value is not an element of set defining y values (line: %d)\n", lines);
             return 0;
         }
     }
@@ -1828,13 +1848,13 @@ int inj(data_t *data, int l, int x, int y, int lines)
     }
 
     //x values aren't in relation on line [line] more than once (injective has to be a function)
-    if (!rel_uh(data, l, 1))
+    if (!rel_dupl(data, l, 1))
     {
         return -1;
     }
 
     //y values aren't in relation on line [line] more than once
-    if (!rel_uh(data, l, 2))
+    if (!rel_dupl(data, l, 2))
     {
         return -1;
     }
@@ -1860,14 +1880,16 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
     //return value of inj is stored in check in order to check it multiple times
     int check = inj(data, l, x, y, lines);
     if (check == 0){
-        return 0;
+        fprintf(stdout, "false\n");
+        return -1;
+        ///return 0;
     }
     if (check == 1){
         fprintf(stdout, "true\n");
         return 1;
     }
     fprintf(stdout, "false\n");
-    return 1;
+    return -1;
 }
 
 /* decides if relation on line l, defined by sets on lines x and y is surjective */
@@ -1922,14 +1944,16 @@ int rel_surjective(data_t* data, int arg_count, int arg_arr[], int lines)
     //return value of inj is stored in check in order to check it multiple times
     int check = surj(data, l, x, y, lines);
     if (check == 0){
-        return 0;
+        fprintf(stdout, "false\n");
+        return -1;
+        ///return 0;
     }
     if (check == 1){
         fprintf(stdout, "true\n");
         return 1;
     }
     fprintf(stdout, "false\n");
-    return 1;
+    return -1;
 }
 
 /* prints whether or not is the relation on line [line] bijective, TO DO */
@@ -1952,7 +1976,9 @@ int rel_bijective(data_t* data, int arg_count, int arg_arr[], int lines)
     int checkinj = inj(data, l, x, y, lines);
     int checksurj = surj(data, l, x, y, lines);
     if(checkinj == 0 || checksurj == 0){
-        return 0;
+        fprintf(stdout, "false\n");
+        return -1;
+        ///return 0;
     }
     if (checkinj == 1 && checksurj == 1){
         fprintf(stdout, "true\n");
@@ -1972,6 +1998,8 @@ int main(int argc, char *argv[])
 
     data_t data;
     data_create(&data);
+    //initialize universe
+    uni_create(&(data.uni));
 
     //open file and load its content
     if (file_load(argv, &data) == 0) {
