@@ -2,7 +2,7 @@
  *
  * setcal.c
  *
- * ver 1.2
+ * ver 1.3
  * =========================
  *
  * 04.12.2021
@@ -96,6 +96,8 @@ int rel_closure_trans(data_t*, int, int*, int);
 #define DIGITS_LINES_MAX 5  //digits of LINES_MAX + 1
 #define COM_NUM 22          //number of supported commands
 #define ARG_MAX 3           //max. number of arguments of any command
+#define TRUE "true"
+#define FALSE "false"
 
 //array of names of all supported commands
 const char com_arr_n[COM_NUM][ELEM_LEN] = {
@@ -566,7 +568,7 @@ int is_keyword(char str[])
             return 1;
         }
     }
-    if ((strcmp(str, "true") == 0) || (strcmp(str, "false") == 0)){
+    if ((strcmp(str, TRUE) == 0) || (strcmp(str, FALSE) == 0)){
         return 1;
     }
     return 0;
@@ -1216,20 +1218,24 @@ int com_arg_check(int expected_args, int arg_count, int lines)
     return 1;
 }
 
-/* prints chosen universe elements */
-void bool_print(uni_t* uni, bool* b)
+/* adds chosen universe elements to a set which is added to data */
+int bool_append(data_t *data, bool* b, set_t *set)
 {
-    fprintf(stdout, "S ");
-    for (int i = 0; i < uni->length; i++)
+    for (int i = 0; i < data->uni.length; i++)
     {
         if (b[i])
         {
-            fprintf(stdout, "%s ", uni->elem_arr[i]);
+            if (set_append(set, i) == 0) {
+                return 0;
+            }
         }
     }
-    fprintf(stdout, "\n");
 
-    return;
+    if (data_append_s(data, set) == 0) {
+        return 0;
+    }
+
+    return 1;
 }
 
 /* resets bool array */
@@ -1293,12 +1299,12 @@ int set_empty(data_t* data, int arg_count, int arg_arr[], int lines)
     //set has length 0 - is empty
     if (data->arr_s[l]->length == 0)
     {
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
 
     //set has length greater than 0
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "%s\n", FALSE);
     return -1;
 }
 
@@ -1346,7 +1352,16 @@ int set_complement(data_t* data, int arg_count, int arg_arr[], int lines)
         set_comp[data->arr_s[l]->elem_arr[i]] = false;
     }
 
-    bool_print(&(data->uni), set_comp);
+    set_t *set = malloc(sizeof(set_t));
+    set_create(set, lines);
+
+    if (bool_append(data, set_comp, set) == 0) {
+        set_destroy(set);
+        free(set);
+        return 0;
+    }
+
+    set_print(data, lines);
     return 1;
 }
 
@@ -1381,7 +1396,16 @@ int set_union(data_t* data, int arg_count, int arg_arr[], int lines)
         l = l_b;
     }
 
-    bool_print(&(data->uni), set_uni);
+    set_t *set = malloc(sizeof(set_t));
+    set_create(set, lines);
+
+    if (bool_append(data, set_uni, set) == 0) {
+        set_destroy(set);
+        free(set);
+        return 0;
+    }
+
+    set_print(data, lines);
     return 1;
 }
 
@@ -1418,7 +1442,16 @@ int set_intersect(data_t* data, int arg_count, int arg_arr[], int lines)
         }
     }
 
-    bool_print(&(data->uni), set_int);
+    set_t *set = malloc(sizeof(set_t));
+    set_create(set, lines);
+
+    if (bool_append(data, set_int, set) == 0) {
+        set_destroy(set);
+        free(set);
+        return 0;
+    }
+    set_print(data, lines);
+
     return 1;
 }
 
@@ -1455,7 +1488,16 @@ int set_minus(data_t* data, int arg_count, int arg_arr[], int lines)
         set_min[data->arr_s[l_b]->elem_arr[i]] = false;
     }
 
-    bool_print(&(data->uni), set_min);
+    set_t *set = malloc(sizeof(set_t));
+    set_create(set, lines);
+
+    if (bool_append(data, set_min, set) == 0) {
+        set_destroy(set);
+        free(set);
+        return 0;
+    }
+
+    set_print(data, lines);
     return 1;
 }
 
@@ -1479,12 +1521,12 @@ int set_subseteq(data_t* data, int arg_count, int arg_arr[], int lines)
     //set on line [line_a] is a subset of set on line [line_b]
     if (set_sub(data, l_a, l_b))
     {
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
 
     //set on line [line_a] isn't a subset of set on line [line_b]
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "%s\n", FALSE);
     return -1;
 }
 
@@ -1509,13 +1551,13 @@ int set_subset(data_t* data, int arg_count, int arg_arr[], int lines)
     //and set on line [line_b] isn't a subset of set on line [line_a]
     if (set_sub(data, l_a, l_b) && !set_sub(data, l_b, l_a))
     {
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
 
     //set on line [line_a] isn't a subset of set on line [line_b]
     //and/or set on line [line_b] is a subset of set on line [line_a]
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "%s\n", FALSE);
     return -1;
 }
 
@@ -1541,13 +1583,13 @@ int set_equals(data_t* data, int arg_count, int arg_arr[], int lines)
     ///and set on line [line_b] is a subset of set on line [line_a]
     if (set_sub(data, l_a, l_b) && set_sub(data, l_b, l_a))
     {
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
 
     //set on line [line_a] isn't a subset of set on line [line_b]
     ///and/or set on line [line_b] isn't a subset of set on line [line_a]
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "%s\n", FALSE);
     return -1;
 }
 
@@ -1634,13 +1676,13 @@ int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
 
         //find (i i)
         if (isin_rel(data->arr_r[l], temp_pair) == 0) {
-            fprintf(stdout, "false\n");
+            fprintf(stdout, "%s\n", FALSE);
             return -1;
         }
     }
 
     //else success
-    fprintf(stdout, "true\n");
+    fprintf(stdout, "%s\n", TRUE);
     return 1;
 }
 
@@ -1670,14 +1712,14 @@ int rel_symmetric(data_t* data, int arg_count, int arg_arr[], int lines)
 
             //for i = (a b) find (b a)
             if (isin_rel(data->arr_r[l], temp_pair) == 0) {
-                fprintf(stdout, "false\n");
+                fprintf(stdout, "%s\n", FALSE);
                 return -1;
             }
         }
     }
 
     //else success
-    fprintf(stdout, "true\n");
+    fprintf(stdout, "%s\n", TRUE);
     return 1;
 }
 
@@ -1707,14 +1749,14 @@ int rel_antisymmetric(data_t* data, int arg_count, int arg_arr[], int lines)
 
             //for i = (a b) find (b a)
             if (isin_rel(data->arr_r[l], temp_pair) == 1) {
-                fprintf(stdout, "false\n");
+                fprintf(stdout, "%s\n", FALSE);
                 return -1;
             }
         }
     }
 
     //else success
-    fprintf(stdout, "true\n");
+    fprintf(stdout, "%s\n", TRUE);
     return 1;
 }
 
@@ -1747,7 +1789,7 @@ int rel_transitive(data_t* data, int arg_count, int arg_arr[], int lines)
 
                     //if (? ??) not found -> relation is not transitive
                     if (isin_rel(data->arr_r[l], temp_pair) == 0) {
-                        fprintf(stdout, "false\n");
+                        fprintf(stdout, "%s\n", FALSE);
                         return -1;
                     }
                 }
@@ -1756,7 +1798,7 @@ int rel_transitive(data_t* data, int arg_count, int arg_arr[], int lines)
     }
 
     //else success
-    fprintf(stdout, "true\n");
+    fprintf(stdout, "%s\n", TRUE);
     return 1;
 }
 
@@ -1779,11 +1821,11 @@ int rel_function(data_t* data, int arg_count, int arg_arr[], int lines)
     //x values aren't in relation on line [line] more than once
     if (rel_dupl(data, l, 1))
     {
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
 
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "%s\n", FALSE);
     return 1;
 }
 
@@ -1806,7 +1848,16 @@ int rel_domain(data_t* data, int arg_count, int arg_arr[], int lines)
     bool rel_dom[data->uni.length];  //domain of relation on line [line]
     rel_elements(data, l, 1, rel_dom);
 
-    bool_print(&(data->uni), rel_dom);
+    set_t *set = malloc(sizeof(set_t));
+    set_create(set, lines);
+
+    if (bool_append(data, rel_dom, set) == 0) {
+        set_destroy(set);
+        free(set);
+        return 0;
+    }
+
+    set_print(data, lines);
     return 1;
 }
 
@@ -1829,7 +1880,16 @@ int rel_codomain(data_t* data, int arg_count, int arg_arr[], int lines)
     bool rel_cod[data->uni.length];  //codomain of relation on line [line]
     rel_elements(data, l, 2, rel_cod);
 
-    bool_print(&(data->uni), rel_cod);
+    set_t *set = malloc(sizeof(set_t));
+    set_create(set, lines);
+
+    if (bool_append(data, rel_cod, set) == 0) {
+        set_destroy(set);
+        free(set);
+        return 0;
+    }
+
+    set_print(data, lines);
     return 1;
 }
 
@@ -1892,15 +1952,15 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
     //return value of inj is stored in check in order to check it multiple times
     int check = inj(data, l, x, y, lines);
     if (check == 0){
-        fprintf(stdout, "false\n");
+        fprintf(stdout, "%s\n", FALSE);
         return -1;
         ///return 0;
     }
     if (check == 1){
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "%s\n", FALSE);
     return -1;
 }
 
@@ -1956,15 +2016,15 @@ int rel_surjective(data_t* data, int arg_count, int arg_arr[], int lines)
     //return value of inj is stored in check in order to check it multiple times
     int check = surj(data, l, x, y, lines);
     if (check == 0){
-        fprintf(stdout, "false\n");
+        fprintf(stdout, "%s\n", FALSE);
         return -1;
         ///return 0;
     }
     if (check == 1){
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "%s\n", FALSE);
     return -1;
 }
 
@@ -1988,15 +2048,15 @@ int rel_bijective(data_t* data, int arg_count, int arg_arr[], int lines)
     int checkinj = inj(data, l, x, y, lines);
     int checksurj = surj(data, l, x, y, lines);
     if(checkinj == 0 || checksurj == 0){
-        fprintf(stdout, "false\n");
+        fprintf(stdout, "%s\n", FALSE);
         return -1;
         ///return 0;
     }
     if (checkinj == 1 && checksurj == 1){
-        fprintf(stdout, "true\n");
+        fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
-    fprintf(stdout, "false\n");
+    fprintf(stdout, "%s\n", FALSE);
     return -1;
 }
 
@@ -2005,7 +2065,6 @@ int rel_copy(rel_t *src, rel_t *dst)
 {
     for (int i = 0; i < src->length; i++) {
         if (rel_append(dst, src->elem_arr[i]) == 0) {
-            memory_err();
             return 0;
         }
     }
@@ -2214,7 +2273,6 @@ int main(int argc, char *argv[])
 
     data_t data;
     data_create(&data);
-
 
     //open file and load its content
     if (file_load(argv, &data) == 0) {

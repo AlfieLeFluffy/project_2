@@ -21,7 +21,7 @@ C symmetric 8
 C antisymmetric 8
 C transitive 8
 C function 7
-C domain 7
+C domain 8
 C codomain 7
 C injective 6 1 1
 C surjective 8 5 5
@@ -30,3 +30,4 @@ C closure_ref 6
 C reflexive 29
 C closure_sym 6
 C closure_trans 9
+C union 24 24
