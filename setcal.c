@@ -2,7 +2,7 @@
  *
  * setcal.c
  *
- * ver 1.3
+ * ver 1.4
  * =========================
  *
  * 04.12.2021
@@ -154,11 +154,9 @@ void uni_print(uni_t *u)
 /* find set defined on line [line] */
 int set_line(data_t* data, int line)
 {
-    for (int i = 0; i < data->length_s && i < line; i++)
-    {
+    for (int i = 0; i < data->length_s && i < line; i++){
         //set on line [line] found
-        if (data->arr_s[i]->line == line)
-        {
+        if (data->arr_s[i]->line == line){
             return i;
         }
     }
@@ -193,11 +191,9 @@ void set_print(data_t *d, int line)
 /* find relation defined on line [line] */
 int rel_line(data_t* data, int line)
 {
-    for (int i = 0; i < data->length_r && i < line; i++)
-    {
+    for (int i = 0; i < data->length_r && i < line; i++){
         //relation on line [line] found
-        if (data->arr_r[i]->line == line)
-        {
+        if (data->arr_r[i]->line == line){
             return i;
         }
     }
@@ -519,11 +515,9 @@ char skip_space(FILE *fp)
 /* function for loading a string from file */
 char load_str(FILE *fp, char str[], int *len, char mode)
 {
-    //if [mode] == 'c' run in command mode
-    //else run normally
+    //if [mode] == 'c' run in command mode, else run normally
 
     //when successful, function returns the character immediately after the loaded string (space or '\n')
-
     char c;
     *len = 0;  //length of loaded string ... needed for loading to universe
     str[0] = '\0';
@@ -712,14 +706,12 @@ int load_set(FILE *fp, data_t *d, int line)
 
     do {
         c = load_str(fp, temp_s, &len, 'n');
-
         //if load_str returns 0 (=error), return 0
         if (c == 0){
             set_destroy(s);
             free(s);
             return 0;
         }
-
         //load element to set
         if (elem_to_s(&(d->uni), s, temp_s, line) == 0) {
             set_destroy(s);
@@ -969,7 +961,6 @@ int load_com_args(FILE *fp, int *arg_count, int arg_arr[], int line)
             (*arg_count) = i;
             return 1;
         }
-
         //add it to string
         strnum[0] = c;
         strnum[1] = '\0';
@@ -985,7 +976,6 @@ int load_com_args(FILE *fp, int *arg_count, int arg_arr[], int line)
             (*arg_count) = i+1;
             return 1;
         }
-
         //reset
         strnum[0] = '\0';
     }
@@ -1030,28 +1020,16 @@ int load_com(FILE *fp, data_t *d, int line)
         fprintf(stderr, "Unknown command (%s) on line %d\n", com, line);
         return 0;
     }
-
     //load command arguments
     if (load_com_args(fp, &arg_count, arg_arr, line) == 0) {
         return 0;
     }
-
     //execute commands
     if ( (*com_arr_p[com_i])(d, arg_count, arg_arr, line) == 0 ){
         return 0;
     }
 
     return 1;
-}
-
-/* function for space detection */
-int is_space(FILE *fp, int lines)
-{
-    if (fgetc(fp) == ' '){
-        return 1;
-    }
-    fprintf(stderr, "Expected a space after identifying a line (line %d)\n", lines);
-    return 0;
 }
 
 /* function for loading and checking a line with a universe on it */
@@ -1062,10 +1040,6 @@ int caseU(FILE *fp, data_t *d, int lines)
         fprintf(stderr, "Universe on an unexpected line (line %d)\n", lines);
         return 0;
     }
-    /*
-    if (is_space(fp, lines) == 0){
-        return 0;
-    }*/
 
     //load universe from line
     if (load_uni(fp, &(d->uni)) == 0){
@@ -1089,10 +1063,6 @@ int caseS(FILE *fp, data_t *d, int lines)
         fprintf(stderr, "Universe expected on line 1 instead of set\n");
         return 0;
     }
-    /*
-    if (is_space(fp, lines) == 0){
-        return 0;
-    }*/
 
     //load set into data
     if (load_set(fp, d, lines) == 0) {
@@ -1112,10 +1082,7 @@ int caseR(FILE *fp, data_t *d, int lines)
         fprintf(stderr, "Universe expected on line 1 instead of relation\n");
         return 0;
     }
-    /*
-    if (is_space(fp, lines) == 0){
-        return 0;
-    }*/
+
     //load relation into data
     if (load_rel(fp, d, lines) == 0) {
         return 0;
@@ -1133,10 +1100,6 @@ int caseC(FILE *fp, data_t *d, int lines)
         fprintf(stderr, "Universe expected on line 1 instead of command\n");
         return 0;
     }
-    /*
-    if (is_space(fp, lines) == 0){
-        return 0;
-    }*/
 
     //load and execute command
     if (load_com(fp, d, lines) == 0) {
@@ -1221,10 +1184,9 @@ int com_arg_check(int expected_args, int arg_count, int lines)
 /* adds chosen universe elements to a set which is added to data */
 int bool_append(data_t *data, bool* b, set_t *set)
 {
-    for (int i = 0; i < data->uni.length; i++)
-    {
-        if (b[i])
-        {
+    for (int i = 0; i < data->uni.length; i++){
+        //all marked elements are added to set
+        if (b[i]){
             if (set_append(set, i) == 0) {
                 return 0;
             }
@@ -1241,12 +1203,9 @@ int bool_append(data_t *data, bool* b, set_t *set)
 /* resets bool array */
 void bool_reset(uni_t* uni, bool* arr, bool b)
 {
-    for (int i = 0; i < uni->length; i++)
-    {
+    for (int i = 0; i < uni->length; i++){
         arr[i] = b;
     }
-
-    return;
 }
 
 /*
@@ -1259,17 +1218,14 @@ bool set_sub(data_t* data, int l_a, int l_b)
     bool set_b[data->uni.length];   //elements of set on line [line_b]
     bool_reset(&(data->uni), set_b, false);
 
-    for (int i = 0; i < data->arr_s[l_b]->length; i++)
-    {
+    for (int i = 0; i < data->arr_s[l_b]->length; i++){
         set_b[data->arr_s[l_b]->elem_arr[i]] = true;
     }
 
     //check set on line [line_a]
-    for (int i = 0; i < data->arr_s[l_a]->length; i++)
-    {
+    for (int i = 0; i < data->arr_s[l_a]->length; i++){
         //extra element not contained in set on line [line_b] found
-        if (!set_b[data->arr_s[l_a]->elem_arr[i]])
-        {
+        if (!set_b[data->arr_s[l_a]->elem_arr[i]]){
             return false;
         }
     }
@@ -1290,15 +1246,13 @@ int set_empty(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = set_line(data, arg_arr[0]);  //index of set on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
 
     //set has length 0 - is empty
-    if (data->arr_s[l]->length == 0)
-    {
+    if (data->arr_s[l]->length == 0){
         fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
@@ -1319,8 +1273,7 @@ int set_card(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = set_line(data, line);  //index of set on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
@@ -1337,8 +1290,7 @@ int set_complement(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = set_line(data, arg_arr[0]);  //index of set on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
@@ -1347,8 +1299,7 @@ int set_complement(data_t* data, int arg_count, int arg_arr[], int lines)
     bool_reset(&(data->uni), set_comp, true);
 
     //elements contained in set on line [line_a]
-    for (int i = 0; i < data->arr_s[l]->length; i++)
-    {
+    for (int i = 0; i < data->arr_s[l]->length; i++){
         set_comp[data->arr_s[l]->elem_arr[i]] = false;
     }
 
@@ -1368,7 +1319,7 @@ int set_complement(data_t* data, int arg_count, int arg_arr[], int lines)
 /* prints union of sets on lines [line_a] and [line_b]  */
 int set_union(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    if (com_arg_check(2, arg_count, lines) == 0){
+    if (com_arg_check(2, arg_count, lines) == 0) {
         return 0;
     }
 
@@ -1376,8 +1327,7 @@ int set_union(data_t* data, int arg_count, int arg_arr[], int lines)
     int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
-    if (l_a == -1 || l_b == -1)
-    {
+    if (l_a == -1 || l_b == -1) {
         return 0;
     }
 
@@ -1386,10 +1336,8 @@ int set_union(data_t* data, int arg_count, int arg_arr[], int lines)
 
     //elements contained in sets on lines [line_a] and [line_b]
     int l = l_a;
-    for (int i = 0; i < 2; i++)
-    {
-        for (int j = 0; j < data->arr_s[l]->length; j++)
-        {
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < data->arr_s[l]->length; j++) {
             set_uni[data->arr_s[l]->elem_arr[j]] = true;
         }
 
@@ -1420,8 +1368,7 @@ int set_intersect(data_t* data, int arg_count, int arg_arr[], int lines)
     int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
-    if (l_a == -1 || l_b == -1)
-    {
+    if (l_a == -1 || l_b == -1) {
         return 0;
     }
 
@@ -1430,12 +1377,9 @@ int set_intersect(data_t* data, int arg_count, int arg_arr[], int lines)
     bool_reset(&(data->uni), set_int, false);
 
     //elements contained in both sets on lines [line_a] and [line_b]
-    for (int i = 0; i < data->arr_s[l_a]->length; i++)
-    {
-        for (int j = 0; j < data->arr_s[l_b]->length; j++)
-        {
-            if (data->arr_s[l_a]->elem_arr[i] == data->arr_s[l_b]->elem_arr[j])
-            {
+    for (int i = 0; i < data->arr_s[l_a]->length; i++) {
+        for (int j = 0; j < data->arr_s[l_b]->length; j++) {
+            if (data->arr_s[l_a]->elem_arr[i] == data->arr_s[l_b]->elem_arr[j]) {
                 set_int[data->arr_s[l_a]->elem_arr[i]] = true;
                 break;
             }
@@ -1458,7 +1402,7 @@ int set_intersect(data_t* data, int arg_count, int arg_arr[], int lines)
 /* prints set on line [line_a] minus set on line [line_b]  */
 int set_minus(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    if (com_arg_check(2, arg_count, lines) == 0){
+    if (com_arg_check(2, arg_count, lines) == 0) {
         return 0;
     }
 
@@ -1467,8 +1411,7 @@ int set_minus(data_t* data, int arg_count, int arg_arr[], int lines)
 
 
     //invalid argument [line_a] and/or [line_b]
-    if (l_a == -1 || l_b == -1)
-    {
+    if (l_a == -1 || l_b == -1) {
         return 0;
     }
 
@@ -1477,14 +1420,12 @@ int set_minus(data_t* data, int arg_count, int arg_arr[], int lines)
     bool_reset(&(data->uni), set_min, false);
 
     //elements contained in set on line [line_a]
-    for (int i = 0; i < data->arr_s[l_a]->length; i++)
-    {
+    for (int i = 0; i < data->arr_s[l_a]->length; i++) {
         set_min[data->arr_s[l_a]->elem_arr[i]] = true;
     }
 
     //elements contained in set on line [line_b]
-    for (int i = 0; i < data->arr_s[l_b]->length; i++)
-    {
+    for (int i = 0; i < data->arr_s[l_b]->length; i++) {
         set_min[data->arr_s[l_b]->elem_arr[i]] = false;
     }
 
@@ -1512,15 +1453,13 @@ int set_subseteq(data_t* data, int arg_count, int arg_arr[], int lines)
     int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
-    if (l_a == -1 || l_b == -1)
-    {
+    if (l_a == -1 || l_b == -1){
         return 0;
     }
 
 
     //set on line [line_a] is a subset of set on line [line_b]
-    if (set_sub(data, l_a, l_b))
-    {
+    if (set_sub(data, l_a, l_b)){
         fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
@@ -1541,16 +1480,13 @@ int set_subset(data_t* data, int arg_count, int arg_arr[], int lines)
     int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
     //invalid argument [line_a] and/or [line_b]
-    if (l_a == -1 || l_b == -1)
-    {
+    if (l_a == -1 || l_b == -1){
         return 0;
     }
 
-
     //set on line [line_a] is a subset of set on line [line_b]
     //and set on line [line_b] isn't a subset of set on line [line_a]
-    if (set_sub(data, l_a, l_b) && !set_sub(data, l_b, l_a))
-    {
+    if (set_sub(data, l_a, l_b) && !set_sub(data, l_b, l_a)){
         fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
@@ -1573,16 +1509,14 @@ int set_equals(data_t* data, int arg_count, int arg_arr[], int lines)
 
 
     //invalid argument [line_a] and/or [line_b]
-    if (l_a == -1 || l_b == -1)
-    {
+    if (l_a == -1 || l_b == -1){
         return 0;
     }
 
 
     //set on line [line_a] is a subset of set on line [line_b]
     ///and set on line [line_b] is a subset of set on line [line_a]
-    if (set_sub(data, l_a, l_b) && set_sub(data, l_b, l_a))
-    {
+    if (set_sub(data, l_a, l_b) && set_sub(data, l_b, l_a)){
         fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
@@ -1604,14 +1538,11 @@ void rel_elements(data_t* data, int l, int el, bool* rel)
     bool_reset(&(data->uni), rel, false);
 
     //chosen elements from relation with index [l]
-    for (int i = 0; i < data->arr_r[l]->length; i++)
-    {
-        if (el == 1)
-        {
+    for (int i = 0; i < data->arr_r[l]->length; i++){
+        if (el == 1){
             rel[data->arr_r[l]->elem_arr[i].e_1] = true;
         }
-        else
-        {
+        else{
             rel[data->arr_r[l]->elem_arr[i].e_2] = true;
         }
     }
@@ -1625,23 +1556,18 @@ bool rel_dupl(data_t* data, int l, int el)
     bool rel_el[data->uni.length];  //chosen values from relation on line [line]
     bool_reset(&(data->uni), rel_el, false);
 
-    for (int i = 0; i < data->arr_r[l]->length; i++)
-    {
-        if (el == 1)
-        {
+    for (int i = 0; i < data->arr_r[l]->length; i++){
+        if (el == 1){
             //x value found multiple times
-            if (rel_el[data->arr_r[l]->elem_arr[i].e_1])
-            {
+            if (rel_el[data->arr_r[l]->elem_arr[i].e_1]){
                 return false;
             }
 
             rel_el[data->arr_r[l]->elem_arr[i].e_1] = true;
         }
-        else
-        {
+        else{
             //y value found multiple times
-            if (rel_el[data->arr_r[l]->elem_arr[i].e_2])
-            {
+            if (rel_el[data->arr_r[l]->elem_arr[i].e_2]){
                 return false;
             }
 
@@ -1655,15 +1581,14 @@ bool rel_dupl(data_t* data, int l, int el)
 /* prints whether or not is the relation on line [line] reflexive */
 int rel_reflexive(data_t* data, int arg_count, int arg_arr[], int lines)
 {
-    if (com_arg_check(1, arg_count, lines) == 0){
+    if (com_arg_check(1, arg_count, lines) == 0) {
         return 0;
     }
 
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1) {
         return 0;
     }
 
@@ -1696,8 +1621,7 @@ int rel_symmetric(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1) {
         return 0;
     }
 
@@ -1733,8 +1657,7 @@ int rel_antisymmetric(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1) {
         return 0;
     }
 
@@ -1770,8 +1693,7 @@ int rel_transitive(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1) {
         return 0;
     }
 
@@ -1812,15 +1734,13 @@ int rel_function(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
 
     //x values aren't in relation on line [line] more than once
-    if (rel_dupl(data, l, 1))
-    {
+    if (rel_dupl(data, l, 1)){
         fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
@@ -1839,8 +1759,7 @@ int rel_domain(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument [line]
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
@@ -1871,8 +1790,7 @@ int rel_codomain(data_t* data, int arg_count, int arg_arr[], int lines)
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
 
     //invalid argument
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
@@ -1920,14 +1838,12 @@ int inj(data_t *data, int l, int x, int y, int lines)
     }
 
     //x values aren't in relation on line [line] more than once (injective has to be a function)
-    if (!rel_dupl(data, l, 1))
-    {
+    if (!rel_dupl(data, l, 1)){
         return -1;
     }
 
     //y values aren't in relation on line [line] more than once
-    if (!rel_dupl(data, l, 2))
-    {
+    if (!rel_dupl(data, l, 2)){
         return -1;
     }
     return 1;
@@ -1945,8 +1861,7 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
     int y = set_line(data, arg_arr[2]);  //index of set defining y values
 
     //invalid argument
-    if (l == -1 || x == -1 || y == -1)
-    {
+    if (l == -1 || x == -1 || y == -1){
         return 0;
     }
     //return value of inj is stored in check in order to check it multiple times
@@ -1970,6 +1885,7 @@ int surj(data_t *data, int l, int x, int y, int lines)
     if (rel_elems_in_sets(data->arr_r[l], data->arr_s[x], data->arr_s[y], lines) == 0) {
         return 0;
     }
+
     //bool array for marking which elements were seen in relation as a y value
     bool set_arr[data->arr_s[y]->length];
     for (int i = 0; i < data->arr_s[y]->length; i++){
@@ -2008,8 +1924,7 @@ int rel_surjective(data_t* data, int arg_count, int arg_arr[], int lines)
     int y = set_line(data, arg_arr[2]);  //index of set defining y values
 
     //invalid argument
-    if (l == -1 || x == -1 || y == -1)
-    {
+    if (l == -1 || x == -1 || y == -1){
         return 0;
     }
 
@@ -2040,8 +1955,7 @@ int rel_bijective(data_t* data, int arg_count, int arg_arr[], int lines)
     int y = set_line(data, arg_arr[2]);  //index of set defining y values
 
     //invalid argument
-    if (l == -1 || x == -1 || y == -1)
-    {
+    if (l == -1 || x == -1 || y == -1){
         return 0;
     }
 
@@ -2107,8 +2021,7 @@ int rel_closure_ref(data_t* data, int arg_count, int arg_arr[], int lines)
 
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
     //invalid argument
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
@@ -2168,8 +2081,7 @@ int rel_closure_sym(data_t* data, int arg_count, int arg_arr[], int lines)
 
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
     //invalid argument
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
@@ -2239,8 +2151,7 @@ int rel_closure_trans(data_t* data, int arg_count, int arg_arr[], int lines)
 
     int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
     //invalid argument
-    if (l == -1)
-    {
+    if (l == -1){
         return 0;
     }
 
