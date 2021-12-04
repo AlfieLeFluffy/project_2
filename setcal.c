@@ -2,7 +2,7 @@
  *
  * setcal.c
  *
- * ver 1.1
+ * ver 1.2
  * =========================
  *
  * 04.12.2021
@@ -86,25 +86,29 @@ int rel_codomain(data_t*, int, int*, int);
 int rel_injective(data_t*, int, int*, int);
 int rel_surjective(data_t*, int, int*, int);
 int rel_bijective(data_t*, int, int*, int);
+int rel_closure_ref(data_t*, int, int*, int);
+int rel_closure_sym(data_t*, int, int*, int);
+int rel_closure_trans(data_t*, int, int*, int);
 
 /** definitions of constants **/
 #define ELEM_LEN 31         //max. allowed length of strings + 1 ... used also for commands (changeable if needed)
 #define LINES_MAX 1000      //max. allowed number of lines in a file
 #define DIGITS_LINES_MAX 5  //digits of LINES_MAX + 1
-#define COM_NUM 19          //number of supported commands
+#define COM_NUM 22          //number of supported commands
 #define ARG_MAX 3           //max. number of arguments of any command
 
 //array of names of all supported commands
 const char com_arr_n[COM_NUM][ELEM_LEN] = {
     "empty", "card",                                                                    //commands without parameter universe
     "complement", "union", "intersect", "minus", "subseteq", "subset", "equals",        //other set commands
-    "reflexive", "symmetric", "antisymmetric", "transitive", "function", "domain", "codomain", "injective", "surjective", "bijective"};     //rel commands
-
+    "reflexive", "symmetric", "antisymmetric", "transitive", "function", "domain", "codomain", "injective", "surjective", "bijective",  //rel commands
+    "closure_ref", "closure_sym", "closure_trans"};                                                  //bonus rel commands
 
 //array of function pointers
 const pfunc com_arr_p[COM_NUM] = {
     &set_empty, &set_card, &set_complement, &set_union, &set_intersect, &set_minus, &set_subseteq, &set_subset, &set_equals,
-    &rel_reflexive, &rel_symmetric, &rel_antisymmetric, &rel_transitive, &rel_function, &rel_domain, &rel_codomain, &rel_injective, &rel_surjective, &rel_bijective};
+    &rel_reflexive, &rel_symmetric, &rel_antisymmetric, &rel_transitive, &rel_function, &rel_domain, &rel_codomain, &rel_injective, &rel_surjective, &rel_bijective,
+    &rel_closure_ref, &rel_closure_sym, &rel_closure_trans};
 
 
 /** definitions of functions **/
@@ -258,6 +262,8 @@ void data_create(data_t *d)
     d->arr_r = NULL;
     d->length_r = 0;
     d->cap_r = 0;
+
+    uni_create(&(d->uni));
 }
 
 /* function for adding a new element to universe */
@@ -476,6 +482,17 @@ int check_char(char c)
     return 0;
 }
 
+/* function for checking if a character is supported for commands*/
+int check_char_com(char c)
+{
+    if ( (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'){
+        return 1;
+    }
+
+    fprintf(stderr, "Char '%c' is not supported\n", c);
+    return 0;
+}
+
 /* appends string by one character */
 void str_append(char str[], char c, int *len)
 {
@@ -498,8 +515,11 @@ char skip_space(FILE *fp)
 }
 
 /* function for loading a string from file */
-char load_str(FILE *fp, char str[], int *len)
+char load_str(FILE *fp, char str[], int *len, char mode)
 {
+    //if [mode] == 'c' run in command mode
+    //else run normally
+
     //when successful, function returns the character immediately after the loaded string (space or '\n')
 
     char c;
@@ -514,8 +534,13 @@ char load_str(FILE *fp, char str[], int *len)
     }
 
     do {
-        //if c isn't a letter of the alphabet, return 0
-        if (check_char(c) == 0){
+        //if c isn't a supported letter, return 0
+        if (mode == 'c') {
+            if(check_char_com(c) == 0){
+                return 0;
+            }
+        }
+        else if(check_char(c) == 0){
             return 0;
         }
         str_append(str, c, len);      //first iteration uses a first character after removing all spaces
@@ -558,7 +583,7 @@ int load_uni(FILE *fp, uni_t *u)
         //to check '\n' and 0 separately, we need to save the
         //return value of 'load_str'
 
-        c = load_str(fp, temp_s, &len);
+        c = load_str(fp, temp_s, &len, 'n');
 
         //if 'load_str' returns 0 => error
         if (c == 0){
@@ -684,7 +709,7 @@ int load_set(FILE *fp, data_t *d, int line)
     set_create(s, line);
 
     do {
-        c = load_str(fp, temp_s, &len);
+        c = load_str(fp, temp_s, &len, 'n');
 
         //if load_str returns 0 (=error), return 0
         if (c == 0){
@@ -972,19 +997,6 @@ int load_com_args(FILE *fp, int *arg_count, int arg_arr[], int line)
     return 0;
 }
 
-/* function for executing command */
-/*
-int do_com(data_t *d, int com_i,int arg_count, int arg_arr[], int line)     ///PREDELAT NA INT!!!!!!!
-{
-
-    if ( (*com_arr_p[com_i])(d, arg_count, arg_arr) == 0 ){
-        return 0;
-    }
-
-    return 1;
-}
-*/
-
 /* function for loading and executing command from file */
 int load_com(FILE *fp, data_t *d, int line)
 {
@@ -997,7 +1009,7 @@ int load_com(FILE *fp, data_t *d, int line)
     int arg_arr[ARG_MAX];
 
     //load command
-    if ((c = load_str(fp, com, &len)) == 0) {
+    if ((c = load_str(fp, com, &len, 'c')) == 0) {
         return 0;
     }
     if (c == '\n') {
@@ -1649,7 +1661,7 @@ int rel_symmetric(data_t* data, int arg_count, int arg_arr[], int lines)
 
     elpair_t temp_pair;
 
-    //set for all pairs true in rel_el if they have a pair they are symmetric with
+    //for all pairs find a pair they are symmetric with
     for (int i = 0; i < data->arr_r[l]->length; i++) {
         //skip diagonal pairs because they are symmetric to themselves
         if (data->arr_r[l]->elem_arr[i].e_1 != data->arr_r[l]->elem_arr[i].e_2) {
@@ -1956,7 +1968,7 @@ int rel_surjective(data_t* data, int arg_count, int arg_arr[], int lines)
     return -1;
 }
 
-/* prints whether or not is the relation on line [line] bijective, TO DO */
+/* prints whether or not is the relation on line [line] bijective */
 int rel_bijective(data_t* data, int arg_count, int arg_arr[], int lines)
 {
     if (com_arg_check(3, arg_count, lines) == 0){
@@ -1988,6 +2000,210 @@ int rel_bijective(data_t* data, int arg_count, int arg_arr[], int lines)
     return -1;
 }
 
+/* copies relation to an empty relation */
+int rel_copy(rel_t *src, rel_t *dst)
+{
+    for (int i = 0; i < src->length; i++) {
+        if (rel_append(dst, src->elem_arr[i]) == 0) {
+            memory_err();
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/* make relation a reflexive closure and add it to data */
+int cl_ref(data_t* data, rel_t *closure)
+{
+    elpair_t temp_pair;
+    //check if all universe diagonal elements are in relation with themselves
+    for (int i = 0; i < data->uni.length; i++) {
+        temp_pair.e_1 = i;
+        temp_pair.e_2 = i;
+
+        //try to find (i i) in the relation
+        if (isin_rel(closure, temp_pair) == 0) {
+            //add it if not found
+            if (rel_append(closure, temp_pair) == 0) {
+                return 0;
+            }
+        }
+    }
+
+    //add closure to data
+    if (data_append_r(data, closure) == 0) {
+        return 0;
+    }
+
+    return 1;
+}
+
+/* prints relation's reflexive closure */
+int rel_closure_ref(data_t* data, int arg_count, int arg_arr[], int lines)
+{
+    if (com_arg_check(1, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
+    //invalid argument
+    if (l == -1)
+    {
+        return 0;
+    }
+
+    rel_t *closure = malloc(sizeof(rel_t));
+    rel_create(closure, lines);
+
+    if (rel_copy(data->arr_r[l], closure) == 0) {
+        rel_destroy(closure);
+        free(closure);
+        return 0;
+    }
+
+    if (cl_ref(data, closure) == 0) {
+        rel_destroy(closure);
+        free(closure);
+        return 0;
+    }
+
+    rel_print(data, lines);
+    return 1;
+}
+
+/* make relation a symmetric closure and add it to data */
+int cl_sym(data_t* data, rel_t *closure)
+{
+    elpair_t temp_pair;
+    //for all pairs find a pair they are symmetric with
+    for (int i = 0; i < closure->length; i++) {
+        //skip diagonal pairs because they are symmetric to themselves
+        if (closure->elem_arr[i].e_1 != closure->elem_arr[i].e_2) {
+            temp_pair.e_1 = closure->elem_arr[i].e_2;
+            temp_pair.e_2 = closure->elem_arr[i].e_1;
+            //for i = (a b) find (b a)
+            if (isin_rel(closure, temp_pair) == 0) {
+                //add it if not found
+                if (rel_append(closure, temp_pair) == 0) {
+                    return 0;
+                }
+            }
+        }
+    }
+
+    //add closure to data
+    if (data_append_r(data, closure) == 0) {
+        return 0;
+    }
+
+    return 1;
+}
+
+/* prints relation's symmetric closure */
+int rel_closure_sym(data_t* data, int arg_count, int arg_arr[], int lines)
+{
+    if (com_arg_check(1, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
+    //invalid argument
+    if (l == -1)
+    {
+        return 0;
+    }
+
+    rel_t *closure = malloc(sizeof(rel_t));
+    rel_create(closure, lines);
+
+    if (rel_copy(data->arr_r[l], closure) == 0) {
+        rel_destroy(closure);
+        free(closure);
+        return 0;
+    }
+
+    if (cl_sym(data, closure) == 0) {
+        rel_destroy(closure);
+        free(closure);
+        return 0;
+    }
+
+    rel_print(data, lines);
+    return 1;
+}
+
+/* make relation a transitive closure and add it to data */
+int cl_trans(data_t* data, rel_t *closure)
+{
+    elpair_t temp_pair;
+    bool added = true;
+
+    while(added) {
+        added = false;
+        //check if relation is transitive for each pair
+        for (int i = 0; i < closure->length; i++) {
+            //don't check diagonal pairs, because they don't generate anything new
+            if (closure->elem_arr[i].e_1 != closure->elem_arr[i].e_2) {
+                for (int j = 0; j < closure->length; j++) {
+                    //if i = (? b) and j = (b ??)
+                    if (closure->elem_arr[i].e_2 == closure->elem_arr[j].e_1) {
+                        temp_pair.e_1 = closure->elem_arr[i].e_1;
+                        temp_pair.e_2 = closure->elem_arr[j].e_2;
+                        //if (? ??) not found -> relation is not transitive
+                        if (isin_rel(closure, temp_pair) == 0) {
+                            //add it if not found
+                            if (rel_append(closure, temp_pair) == 0) {
+                                return 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //add closure to data
+    if (data_append_r(data, closure) == 0) {
+        return 0;
+    }
+
+    return 1;
+}
+
+/* prints relation's transitive closure */
+int rel_closure_trans(data_t* data, int arg_count, int arg_arr[], int lines)
+{
+    if (com_arg_check(1, arg_count, lines) == 0){
+        return 0;
+    }
+
+    int l = rel_line(data, arg_arr[0]);  //index of relation on line [line]
+    //invalid argument
+    if (l == -1)
+    {
+        return 0;
+    }
+
+    rel_t *closure = malloc(sizeof(rel_t));
+    rel_create(closure, lines);
+
+    if (rel_copy(data->arr_r[l], closure) == 0) {
+        rel_destroy(closure);
+        free(closure);
+        return 0;
+    }
+
+    if (cl_trans(data, closure) == 0) {
+        rel_destroy(closure);
+        free(closure);
+        return 0;
+    }
+
+    rel_print(data, lines);
+    return 1;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -1998,8 +2214,7 @@ int main(int argc, char *argv[])
 
     data_t data;
     data_create(&data);
-    //initialize universe
-    uni_create(&(data.uni));
+
 
     //open file and load its content
     if (file_load(argv, &data) == 0) {
