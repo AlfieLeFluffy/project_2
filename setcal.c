@@ -2,10 +2,10 @@
  *
  * setcal.c
  *
- * ver 1.4
+ * ver 1.5
  * =========================
  *
- * 04.12.2021
+ * 05.12.2021
  *
  * xjobra01
  * xsopfo00
@@ -50,7 +50,7 @@ typedef struct{
 	elpair_t *elem_arr;
 } rel_t;
 
-//all sets and relations
+//universe and all sets and relations
 typedef struct{
     uni_t uni;
     set_t **arr_s;      //array of all set pointers
@@ -114,7 +114,7 @@ const pfunc com_arr_p[COM_NUM] = {
 
 
 /** definitions of functions **/
-//functions return 1 when successful and 0 when not if not stated differently
+//functions return 1 (or -1) when successful and 0 when not if not stated differently
 
 /*
     Memory and printing functions
@@ -251,7 +251,7 @@ void rel_create(rel_t *r, int line)
     r->elem_arr = NULL;
 }
 
-/* function for array of sets and array of relations initialization */
+/* function for data initialization */
 void data_create(data_t *d)
 {
     d->arr_s = NULL;
@@ -480,7 +480,7 @@ int check_char(char c)
     return 0;
 }
 
-/* function for checking if a character is supported for commands*/
+/* function for checking if a character is supported for commands */
 int check_char_com(char c)
 {
     if ( (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'){
@@ -516,8 +516,8 @@ char skip_space(FILE *fp)
 char load_str(FILE *fp, char str[], int *len, char mode)
 {
     //if [mode] == 'c' run in command mode, else run normally
-
     //when successful, function returns the character immediately after the loaded string (space or '\n')
+
     char c;
     *len = 0;  //length of loaded string ... needed for loading to universe
     str[0] = '\0';
@@ -779,7 +779,6 @@ int load_str_r_2(FILE *fp, char str2[], int line)
 
         c = fgetc(fp);       //get new character
 
-        //
         if ( c == '\n') {
             fprintf(stderr, "Unfinished pair in relation on line %d\n", line);
             return 0;
@@ -1093,6 +1092,7 @@ int caseR(FILE *fp, data_t *d, int lines)
     return 1;
 }
 
+/* function for loading and checking a line with a command on it */
 int caseC(FILE *fp, data_t *d, int lines)
 {
     //check if command in not on line 1
@@ -1209,7 +1209,7 @@ void bool_reset(uni_t* uni, bool* arr, bool b)
 }
 
 /*
-    Commands for sets
+    Functions for set commands
 */
 
 /* returns whether or not is set on line [line_a] a subset of set on line [line_b] */
@@ -1234,8 +1234,7 @@ bool set_sub(data_t* data, int l_a, int l_b)
     return true;
 }
 
-
-/* prints whether or not is set on line [line] empty  */
+/* prints whether or not is set on line [line] empty */
 int set_empty(data_t* data, int arg_count, int arg_arr[], int lines)
 {
     if (arg_count != 1){
@@ -1316,7 +1315,7 @@ int set_complement(data_t* data, int arg_count, int arg_arr[], int lines)
     return 1;
 }
 
-/* prints union of sets on lines [line_a] and [line_b]  */
+/* prints union of sets on lines [line_a] and [line_b] */
 int set_union(data_t* data, int arg_count, int arg_arr[], int lines)
 {
     if (com_arg_check(2, arg_count, lines) == 0) {
@@ -1399,7 +1398,7 @@ int set_intersect(data_t* data, int arg_count, int arg_arr[], int lines)
     return 1;
 }
 
-/* prints set on line [line_a] minus set on line [line_b]  */
+/* prints set on line [line_a] minus set on line [line_b] */
 int set_minus(data_t* data, int arg_count, int arg_arr[], int lines)
 {
     if (com_arg_check(2, arg_count, lines) == 0) {
@@ -1457,7 +1456,6 @@ int set_subseteq(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-
     //set on line [line_a] is a subset of set on line [line_b]
     if (set_sub(data, l_a, l_b)){
         fprintf(stdout, "%s\n", TRUE);
@@ -1507,29 +1505,27 @@ int set_equals(data_t* data, int arg_count, int arg_arr[], int lines)
     int l_a = set_line(data, arg_arr[0]);  //index of set on line [line_a]
     int l_b = set_line(data, arg_arr[1]);  //index of set on line [line_b]
 
-
     //invalid argument [line_a] and/or [line_b]
     if (l_a == -1 || l_b == -1){
         return 0;
     }
 
-
     //set on line [line_a] is a subset of set on line [line_b]
-    ///and set on line [line_b] is a subset of set on line [line_a]
+    //and set on line [line_b] is a subset of set on line [line_a]
     if (set_sub(data, l_a, l_b) && set_sub(data, l_b, l_a)){
         fprintf(stdout, "%s\n", TRUE);
         return 1;
     }
 
     //set on line [line_a] isn't a subset of set on line [line_b]
-    ///and/or set on line [line_b] isn't a subset of set on line [line_a]
+    //and/or set on line [line_b] isn't a subset of set on line [line_a]
     fprintf(stdout, "%s\n", FALSE);
     return -1;
 }
 
 
 /*
-    Commands for relations
+    Functions for relation commands
 */
 
 /* returns chosen elements of relation with index [l] */
@@ -1738,7 +1734,6 @@ int rel_function(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-
     //x values aren't in relation on line [line] more than once
     if (rel_dupl(data, l, 1)){
         fprintf(stdout, "%s\n", TRUE);
@@ -1762,7 +1757,6 @@ int rel_domain(data_t* data, int arg_count, int arg_arr[], int lines)
     if (l == -1){
         return 0;
     }
-
 
     bool rel_dom[data->uni.length];  //domain of relation on line [line]
     rel_elements(data, l, 1, rel_dom);
@@ -1794,7 +1788,6 @@ int rel_codomain(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-
     bool rel_cod[data->uni.length];  //codomain of relation on line [line]
     rel_elements(data, l, 2, rel_cod);
 
@@ -1812,18 +1805,16 @@ int rel_codomain(data_t* data, int arg_count, int arg_arr[], int lines)
 }
 
 /* are all of of relation's elements x/y values part of sets defining x/y */
-int rel_elems_in_sets(rel_t *r, set_t *sx, set_t *sy, int lines) ///MAYBE BUDE FALSE MISTO ERROR, zalezi co rekne pan doktor
+int rel_elems_in_sets(rel_t *r, set_t *sx, set_t *sy)
 {
     for (int i = 0; i < r->length; i++){
         //check if x is an element of the x set
         if (isin_set(*sx, r->elem_arr[i].e_1) == 0){
-            ///fprintf(stderr, "Relation's x value is not an element of set defining x values (line: %d)\n", lines);
             return 0;
         }
 
         //check if y is an element of the y set
         if (isin_set(*sy, r->elem_arr[i].e_2) == 0){
-            ///fprintf(stderr, "Relation's y value is not an element of set defining y values (line: %d)\n", lines);
             return 0;
         }
     }
@@ -1831,9 +1822,11 @@ int rel_elems_in_sets(rel_t *r, set_t *sx, set_t *sy, int lines) ///MAYBE BUDE F
 }
 
 /* decides if relation on line l, defined by sets on lines x and y is injective */
-int inj(data_t *data, int l, int x, int y, int lines)
+int inj(data_t *data, int l, int x, int y)
 {
-    if (rel_elems_in_sets(data->arr_r[l], data->arr_s[x], data->arr_s[y], lines) == 0) {
+    //not specified if whether to return error or not
+
+    if (rel_elems_in_sets(data->arr_r[l], data->arr_s[x], data->arr_s[y]) == 0) {
         return 0;
     }
 
@@ -1865,11 +1858,10 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
     //return value of inj is stored in check in order to check it multiple times
-    int check = inj(data, l, x, y, lines);
+    int check = inj(data, l, x, y);
     if (check == 0){
         fprintf(stdout, "%s\n", FALSE);
         return -1;
-        ///return 0;
     }
     if (check == 1){
         fprintf(stdout, "%s\n", TRUE);
@@ -1880,9 +1872,11 @@ int rel_injective(data_t* data, int arg_count, int arg_arr[], int lines)
 }
 
 /* decides if relation on line l, defined by sets on lines x and y is surjective */
-int surj(data_t *data, int l, int x, int y, int lines)
+int surj(data_t *data, int l, int x, int y)
 {
-    if (rel_elems_in_sets(data->arr_r[l], data->arr_s[x], data->arr_s[y], lines) == 0) {
+    //not specified if whether to return error or not
+
+    if (rel_elems_in_sets(data->arr_r[l], data->arr_s[x], data->arr_s[y]) == 0) {
         return 0;
     }
 
@@ -1909,7 +1903,6 @@ int surj(data_t *data, int l, int x, int y, int lines)
         }
     }
     return 1;
-
 }
 
 /* prints whether or not is a relation surjective */
@@ -1929,11 +1922,10 @@ int rel_surjective(data_t* data, int arg_count, int arg_arr[], int lines)
     }
 
     //return value of inj is stored in check in order to check it multiple times
-    int check = surj(data, l, x, y, lines);
+    int check = surj(data, l, x, y);
     if (check == 0){
         fprintf(stdout, "%s\n", FALSE);
         return -1;
-        ///return 0;
     }
     if (check == 1){
         fprintf(stdout, "%s\n", TRUE);
@@ -1959,12 +1951,11 @@ int rel_bijective(data_t* data, int arg_count, int arg_arr[], int lines)
         return 0;
     }
 
-    int checkinj = inj(data, l, x, y, lines);
-    int checksurj = surj(data, l, x, y, lines);
+    int checkinj = inj(data, l, x, y);
+    int checksurj = surj(data, l, x, y);
     if(checkinj == 0 || checksurj == 0){
         fprintf(stdout, "%s\n", FALSE);
         return -1;
-        ///return 0;
     }
     if (checkinj == 1 && checksurj == 1){
         fprintf(stdout, "%s\n", TRUE);
